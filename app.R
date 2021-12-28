@@ -12,12 +12,7 @@ ui <- shinydashboard::dashboardPage(
   
   shinydashboard::dashboardSidebar(
     
-    shiny::selectInput(
-      inputId = "select_user", 
-      label = "Select a Student(s)", 
-      choices = c("All", "A", "B", "C"), 
-      selected = c("All")
-    ), 
+    shiny::uiOutput(outputId = "select_student_picker"),
     
     shinydashboard::sidebarMenu(
       shinydashboard::menuItem(
@@ -75,12 +70,34 @@ ui <- shinydashboard::dashboardPage(
       ), 
       
       shinydashboard::tabItem(
+        tabName = "binary_charts_screen", 
+        
+        shiny::fluidRow(
+          shiny::column(
+            width = 12, 
+            shiny::p("Placeholder")
+          )
+        )
+      ), 
+      
+      shinydashboard::tabItem(
         tabName = "range_raw_screen", 
         
         shiny::fluidRow(
           shiny::column(
             width = 12, 
             reactable::reactableOutput(outputId = "tmp_range")
+          )
+        )
+      ), 
+      
+      shinydashboard::tabItem(
+        tabName = "range_charts_screen", 
+        
+        shiny::fluidRow(
+          shiny::column(
+            width = 12, 
+            shiny::p("Placeholder")
           )
         )
       )
@@ -105,6 +122,26 @@ server <- function(input, output, session) {
     "This app contains the live results of each student in the current workshop."
   ) %>%
     shiny::showModal()
+  
+  
+  
+  # Create a dynamic drop-down list of each student in the workshop
+  output$select_student_picker <- shiny::renderUI({
+    
+    shiny::req(rctv$current_data)
+    
+    shiny::selectInput(
+      inputId = "choose_student", 
+      label = "Select a Student", 
+      choices = c("All", unique(
+        rctv$current_data$binary$User, 
+        rctv$current_data$range$User
+      )), 
+      selected = "All"
+    )
+    
+  })
+  
 
   output$tmp_binary <- reactable::renderReactable({
 
