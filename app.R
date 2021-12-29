@@ -1,7 +1,9 @@
 library(shiny)
 library(shinydashboard)
 library(dplyr)
+library(reactable)
 library(stringr)
+library(purrr)
 
 source("global.R")
 
@@ -76,7 +78,7 @@ ui <- shinydashboard::dashboardPage(
         shiny::fluidRow(
           shiny::column(
             width = 12, 
-            shiny::p("Placeholder")
+            reactable::reactableOutput(outputId = "individual_binary_tbl")
           )
         )
       ), 
@@ -98,7 +100,7 @@ ui <- shinydashboard::dashboardPage(
         shiny::fluidRow(
           shiny::column(
             width = 12, 
-            shiny::p("Placeholder")
+            reactable::reactableOutput(outputId = "individual_range_tbl")
           )
         )
       )
@@ -204,6 +206,43 @@ server <- function(input, output, session) {
       )
 
   })
+  
+  output$individual_binary_tbl <- reactable::renderReactable({
+    
+    shiny::req(rctv$current_data$binary)
+    
+    rctv$current_data$binary %>% 
+      aggregate_binary() %>% 
+      purrr::pluck("individual") %>% 
+      reactable::reactable(
+        filterable = TRUE, 
+        columns = list(
+          Actual = reactable::colDef(filterable = FALSE), 
+          Predicted = reactable::colDef(filterable = FALSE), 
+          Total = reactable::colDef(filterable = FALSE)
+        )
+      )
+    
+  })
+  
+  output$individual_range_tbl <- reactable::renderReactable({
+    
+    shiny::req(rctv$current_data$range)
+    
+    rctv$current_data$range %>% 
+      aggregate_range() %>% 
+      purrr::pluck("individual") %>% 
+      reactable::reactable(
+        filterable = TRUE#, 
+        # columns = list(
+        #   Actual = reactable::colDef(filterable = FALSE), 
+        #   Predicted = reactable::colDef(filterable = FALSE), 
+        #   Total = reactable::colDef(filterable = FALSE)
+        # )
+      )
+    
+  })
+  
   
 }
 
