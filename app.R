@@ -1,6 +1,7 @@
 library(shiny)
 library(shinydashboard)
 library(dplyr)
+library(stringr)
 
 source("global.R")
 

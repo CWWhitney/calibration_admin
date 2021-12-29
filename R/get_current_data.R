@@ -24,7 +24,11 @@ get_current_data <- function(board) {
       Brier
     ) %>% 
     dplyr::mutate(Confidence = as.numeric(
-      gsub(pattern = "%", replacement = "", x = Confidence)
+      stringr::str_replace(
+        string = Confidence, 
+        pattern = "%", 
+        replacement = ""
+      )
     ) / 100)
   
   # Read in the pins containing "range" response data
