@@ -13,7 +13,19 @@ get_current_data <- function(board) {
       function(x) pins::pin_read(board = board, name = x$name), 
       .id = "Pin"
     ) %>% 
-    tibble::as_tibble()
+    tibble::as_tibble() %>% 
+    dplyr::select(
+      user, 
+      Group, 
+      Question, 
+      Response, 
+      Confidence, 
+      Truth, 
+      Brier
+    ) %>% 
+    dplyr::mutate(Confidence = as.numeric(
+      gsub(pattern = "%", replacement = "", x = Confidence)
+    ) / 100)
   
   # Read in the pins containing "range" response data
   range <- pins::pin_search(
@@ -25,7 +37,16 @@ get_current_data <- function(board) {
       function(x) pins::pin_read(board = board, name = x$name), 
       .id = "Pin"
     ) %>% 
-    tibble::as_tibble()
+    tibble::as_tibble() %>% 
+    dplyr::select(
+      user, 
+      Group, 
+      Question, 
+      Lower90, 
+      Upper90, 
+      Truth, 
+      RelativeError
+    )
   
   # Return a list of the binary & response data frames
   list(

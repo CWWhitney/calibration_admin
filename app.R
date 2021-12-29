@@ -64,7 +64,7 @@ ui <- shinydashboard::dashboardPage(
         shiny::fluidRow(
           shiny::column(
             width = 12, 
-            reactable::reactableOutput(outputId = "tmp_binary")
+            reactable::reactableOutput(outputId = "binary_raw_tbl")
           )
         )
       ), 
@@ -86,7 +86,7 @@ ui <- shinydashboard::dashboardPage(
         shiny::fluidRow(
           shiny::column(
             width = 12, 
-            reactable::reactableOutput(outputId = "tmp_range")
+            reactable::reactableOutput(outputId = "range_raw_tbl")
           )
         )
       ), 
@@ -134,8 +134,8 @@ server <- function(input, output, session) {
       inputId = "choose_student", 
       label = "Select a Student", 
       choices = c("All", unique(
-        rctv$current_data$binary$User, 
-        rctv$current_data$range$User
+        rctv$current_data$binary$user, 
+        rctv$current_data$range$user
       )), 
       selected = "All"
     )
@@ -143,21 +143,64 @@ server <- function(input, output, session) {
   })
   
 
-  output$tmp_binary <- reactable::renderReactable({
+  output$binary_raw_tbl <- reactable::renderReactable({
 
     shiny::req(rctv$current_data$binary)
+    shiny::req(input$choose_student)
 
-    rctv$current_data$binary %>%
-      reactable::reactable()
+    data <- rctv$current_data$binary
+    
+    if (input$choose_student != "All") {
+      
+      data <- rctv$current_data$binary %>% 
+        dplyr::filter(user == input$choose_student)
+      
+    }
+    
+    data %>%
+      reactable::reactable(
+        columns = list(
+          Confidence = reactable::colDef(
+            format = reactable::colFormat(percent = TRUE, digits = 0)
+          ), 
+          Truth = reactable::colDef(cell = function(value) {
+            if (value == "T") "TRUE" else "FALSE"
+          }), 
+          Brier = reactable::colDef(
+            format = reactable::colFormat(digits = 3)
+          )
+        )
+      )
 
   })
 
-  output$tmp_range <- reactable::renderReactable({
+  output$range_raw_tbl <- reactable::renderReactable({
 
-    shiny::req(rctv$current_data$range)
+    shiny::req(
+      rctv$current_data$range, 
+      input$choose_student
+    )
 
-    rctv$current_data$range %>%
-      reactable::reactable()
+    data <- rctv$current_data$range
+    
+    if (input$choose_student != "All") {
+      
+      data <- rctv$current_data$range %>% 
+        dplyr::filter(user == input$choose_student)
+      
+    }
+    
+    data %>%
+      reactable::reactable(
+        columns = list(
+          Lower90 = reactable::colDef(name = "Lower Bound"), 
+          Upper90 = reactable::colDef(name = "Upper Bound"), 
+          RelativeError = reactable::colDef(
+            name = "Relative Error", 
+            format = reactable::colFormat(digits = 2)
+          )
+        )
+      )
 
   })
   
