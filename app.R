@@ -263,12 +263,11 @@ server <- function(input, output, session) {
       aggregate_range() %>% 
       purrr::pluck("individual") %>% 
       reactable::reactable(
-        filterable = TRUE#, 
-        # columns = list(
-        #   Actual = reactable::colDef(filterable = FALSE), 
-        #   Predicted = reactable::colDef(filterable = FALSE), 
-        #   Total = reactable::colDef(filterable = FALSE)
-        # )
+        filterable = TRUE, 
+        columns = list(
+          Bounded = reactable::colDef(filterable = FALSE),
+          Total = reactable::colDef(filterable = FALSE)
+        )
       )
     
   })
