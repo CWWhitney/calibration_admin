@@ -4,6 +4,7 @@ library(dplyr)
 library(reactable)
 library(stringr)
 library(purrr)
+library(echarts4r)
 
 source("global.R")
 
@@ -90,7 +91,27 @@ ui <- shinydashboard::dashboardPage(
         shiny::fluidRow(
           shiny::column(
             width = 12, 
-            reactable::reactableOutput(outputId = "individual_binary_tbl")
+            
+            shiny::tabsetPanel(
+              
+              shiny::tabPanel(
+                title = "Individual", 
+                shiny::br(), 
+                reactable::reactableOutput(outputId = "individual_binary_tbl")
+              ), 
+              
+              shiny::tabPanel(
+                title = "Group", 
+                shiny::br(), 
+                reactable::reactableOutput(outputId = "group_binary_tbl")
+              )
+              
+            ),
+            
+            shiny::hr(), 
+            
+            echarts4r::echarts4rOutput(outputId = "group_binary_chart")
+            
           )
         )
       ), 
@@ -272,6 +293,41 @@ server <- function(input, output, session) {
     
   })
   
+  output$group_binary_tbl <- reactable::renderReactable({
+    
+    shiny::req(rctv$current_data$binary)
+    
+    rctv$current_data$binary %>% 
+      aggregate_binary() %>% 
+      purrr::pluck("group") %>% 
+      reactable::reactable(
+        filterable = TRUE, 
+        columns = list(
+          Group_Pct_Actual = reactable::colDef(name = "Actual % Correct"), 
+          Group_Pct_Predicted = reactable::colDef(name = "Predicted % Correct")
+        )
+      )
+    
+  })
+  
+  output$group_binary_chart <- echarts4r::renderEcharts4r({
+    
+    shiny::req(rctv$current_data$binary) %>% 
+      aggregate_binary() %>% 
+      purrr::pluck("group") %>% 
+      dplyr::mutate(Group = paste0("Group ", Group)) %>% tidyr::drop_na() %>%  ### TODO // remove
+      echarts4r::e_charts(Group) %>% 
+      echarts4r::e_bar(Group_Pct_Actual, name = "Actual % Correct") %>% 
+      echarts4r::e_line(Group_Pct_Predicted, name = "Predicted % Correct") %>% 
+      echarts4r::e_tooltip(
+        trigger = "axis", 
+        formatter = echarts4r::e_tooltip_pointer_formatter(
+          style = "percent", 
+          digits = 1
+        )
+      )
+        
+  })
   
 }
 
