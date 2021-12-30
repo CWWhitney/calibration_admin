@@ -42,7 +42,6 @@ calculate_range_adjustment <- function(group_pct) {
   
   (3.29 / inv_norm) / 2
   
-  
 }
 
 aggregate_range <- function(range_data) {

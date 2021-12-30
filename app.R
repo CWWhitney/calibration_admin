@@ -97,16 +97,35 @@ ui <- shinydashboard::dashboardPage(
               shiny::tabPanel(
                 title = "Individual", 
                 shiny::br(), 
-                reactable::reactableOutput(outputId = "individual_binary_tbl")
+                reactable::reactableOutput(outputId = "individual_binary_tbl"), 
+                
+                shiny::br(), 
+                
+                shiny::downloadButton(
+                  class = "btn btn-warning", 
+                  outputId = "download_binary_individual", 
+                  label = "Download Data", 
+                  icon = shiny::icon("download")
+                )
+                
               ), 
               
               shiny::tabPanel(
                 title = "Group", 
                 shiny::br(), 
-                reactable::reactableOutput(outputId = "group_binary_tbl")
+                reactable::reactableOutput(outputId = "group_binary_tbl"), 
+                
+                shiny::br(), 
+                
+                shiny::downloadButton(
+                  class = "btn btn-warning", 
+                  outputId = "download_binary_group", 
+                  label = "Download Data", 
+                  icon = shiny::icon("download")
+                )
               )
               
-            ),
+            ), 
             
             shiny::hr(), 
             
@@ -312,22 +331,72 @@ server <- function(input, output, session) {
   
   output$group_binary_chart <- echarts4r::renderEcharts4r({
     
-    shiny::req(rctv$current_data$binary) %>% 
+    shiny::req(rctv$current_data$binary)
+    
+    rctv$current_data$binary %>% 
       aggregate_binary() %>% 
       purrr::pluck("group") %>% 
       dplyr::mutate(Group = paste0("Group ", Group)) %>% tidyr::drop_na() %>%  ### TODO // remove
       echarts4r::e_charts(Group) %>% 
       echarts4r::e_bar(Group_Pct_Actual, name = "Actual % Correct") %>% 
       echarts4r::e_line(Group_Pct_Predicted, name = "Predicted % Correct") %>% 
+      echarts4r::e_y_axis(
+        formatter = echarts4r::e_axis_formatter(
+          style = "percent", 
+          digits = 0
+        )
+      ) %>% 
       echarts4r::e_tooltip(
         trigger = "axis", 
         formatter = echarts4r::e_tooltip_pointer_formatter(
           style = "percent", 
           digits = 1
         )
-      )
+      ) %>% 
+      echarts4r::e_toolbox_feature(feature = "saveAsImage")
         
   })
+  
+  
+  
+  
+  output$download_binary_individual <- shiny::downloadHandler(
+    
+    filename = function() {
+      
+      paste0("calibration_binary_individual_", Sys.Date(), ".csv")
+      
+    }, 
+    
+    content = function(file) {
+      
+      rctv$current_data$binary %>% 
+        aggregate_binary() %>% 
+        purrr::pluck("individual") %>% 
+        write.csv(file)
+      
+    }
+    
+  )
+  
+  output$download_binary_group <- shiny::downloadHandler(
+    
+    filename = function() {
+      
+      paste0("calibration_binary_group_", Sys.Date(), ".csv")
+      
+    }, 
+    
+    content = function(file) {
+      
+      rctv$current_data$binary %>% 
+        aggregate_binary() %>% 
+        purrr::pluck("group") %>% 
+        write.csv(file)
+      
+    }
+    
+  )
   
 }
 
