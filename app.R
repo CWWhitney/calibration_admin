@@ -15,7 +15,19 @@ ui <- shinydashboard::dashboardPage(
   
   shinydashboard::dashboardSidebar(
     
-    shiny::uiOutput(outputId = "select_student_picker"),
+    shiny::br(), 
+    
+    shiny::actionButton(
+      class = "btn btn-success", 
+      inputId = "refresh_btn", 
+      label = "Refresh Data", 
+      icon = shiny::icon("sync"), 
+      width = "200px"
+    ), 
+    
+    shiny::uiOutput(outputId = "select_student_picker"), 
+    
+    shiny::hr(), 
     
     shinydashboard::sidebarMenu(
       shinydashboard::menuItem(
@@ -125,6 +137,24 @@ server <- function(input, output, session) {
     "This app contains the live results of each student in the current workshop."
   ) %>%
     shiny::showModal()
+  
+  # When the "Refresh Data" button is clicked, re-read the pinned data
+  shiny::observeEvent(input$refresh_btn, {
+    
+    shiny::showNotification(
+      ui = "Please Wait...", 
+      closeButton = FALSE, 
+      id = "wait_notification", 
+      type = "warning"
+    )
+    
+    Sys.sleep(1)
+    
+    rctv$current_data <- get_current_data(board = board)
+    
+    shiny::removeNotification(id = "wait_notification")
+    
+  })
   
   
   
