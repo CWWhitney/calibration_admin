@@ -152,7 +152,46 @@ ui <- shinydashboard::dashboardPage(
         shiny::fluidRow(
           shiny::column(
             width = 12, 
-            reactable::reactableOutput(outputId = "individual_range_tbl")
+            
+            shiny::tabsetPanel(
+              
+              shiny::tabPanel(
+                title = "Individual", 
+                shiny::br(), 
+                reactable::reactableOutput(outputId = "individual_range_tbl"), 
+                
+                shiny::br(), 
+                
+                shiny::downloadButton(
+                  class = "btn btn-warning", 
+                  outputId = "download_range_individual", 
+                  label = "Download Data", 
+                  icon = shiny::icon("download")
+                )
+                
+              ), 
+              
+              shiny::tabPanel(
+                title = "Group", 
+                shiny::br(), 
+                reactable::reactableOutput(outputId = "group_range_tbl"), 
+                
+                shiny::br(), 
+                
+                shiny::downloadButton(
+                  class = "btn btn-warning", 
+                  outputId = "download_range_group", 
+                  label = "Download Data", 
+                  icon = shiny::icon("download")
+                )
+              )
+              
+            ), 
+            
+            shiny::hr(), 
+            
+            echarts4r::echarts4rOutput(outputId = "group_range_chart")
+            
           )
         )
       )
@@ -173,7 +212,17 @@ server <- function(input, output, session) {
   rctv$current_data <- get_current_data(board = board)
 
   shiny::modalDialog(
-    title = "Welcome, Admin!",
+    title = "Welcome, Admin!", 
+    shiny::HTML(
+      glue::glue(
+        "<iframe width='560' height='315'", 
+        "src='https://www.youtube.com/embed/WE5gT_LlV24'", 
+        "title='YouTube video player' frameborder='0' allow='accelerometer;", 
+        "autoplay; clipboard-write; encrypted-media; gyroscope;", 
+        "picture-in-picture' allowfullscreen></iframe>", 
+        .sep = " "
+      )
+    ), 
     "This app contains the live results of each student in the current workshop."
   ) %>%
     shiny::showModal()
@@ -329,6 +378,27 @@ server <- function(input, output, session) {
     
   })
   
+  output$group_range_tbl <- reactable::renderReactable({
+    
+    shiny::req(rctv$current_data$range)
+    
+    rctv$current_data$range %>% 
+      aggregate_range() %>% 
+      purrr::pluck("group") %>% 
+      reactable::reactable(
+        filterable = TRUE, 
+        columns = list(
+          Group_Pct = reactable::colDef(
+            name = "Actual % Correct", 
+            format = reactable::colFormat(percent = TRUE, digits = 2)
+          ), 
+          Adjustment_Needed = reactable::colDef(name = "Adjustment Needed")
+        )
+      )
+    
+  })
+  
+  
   output$group_binary_chart <- echarts4r::renderEcharts4r({
     
     shiny::req(rctv$current_data$binary)
@@ -336,10 +406,44 @@ server <- function(input, output, session) {
     rctv$current_data$binary %>% 
       aggregate_binary() %>% 
       purrr::pluck("group") %>% 
-      dplyr::mutate(Group = paste0("Group ", Group)) %>% tidyr::drop_na() %>%  ### TODO // remove
+      dplyr::mutate(
+        Group = paste0("Group ", Group)
+      ) %>% tidyr::drop_na() %>%  ### TODO // remove
       echarts4r::e_charts(Group) %>% 
       echarts4r::e_bar(Group_Pct_Actual, name = "Actual % Correct") %>% 
       echarts4r::e_line(Group_Pct_Predicted, name = "Predicted % Correct") %>% 
+      echarts4r::e_y_axis(
+        formatter = echarts4r::e_axis_formatter(
+          style = "percent", 
+          digits = 0
+        )
+      ) %>% 
+      echarts4r::e_tooltip(
+        trigger = "axis", 
+        formatter = echarts4r::e_tooltip_pointer_formatter(
+          style = "percent", 
+          digits = 1
+        )
+      ) %>% 
+      echarts4r::e_toolbox_feature(feature = "saveAsImage")
+    
+  })
+  
+  
+  output$group_range_chart <- echarts4r::renderEcharts4r({
+    
+    shiny::req(rctv$current_data$range)
+    
+    rctv$current_data$range %>% 
+      aggregate_range() %>% 
+      purrr::pluck("group") %>% 
+      dplyr::mutate(
+        Group = paste0("Group ", Group), 
+        Target = 0.90
+      ) %>% tidyr::drop_na() %>%  ### TODO // remove
+      echarts4r::e_charts(Group) %>% 
+      echarts4r::e_bar(Group_Pct, name = "Actual % Correct") %>% 
+      echarts4r::e_line(Target, name = "Target % Correct") %>% 
       echarts4r::e_y_axis(
         formatter = echarts4r::e_axis_formatter(
           style = "percent", 
@@ -391,6 +495,45 @@ server <- function(input, output, session) {
       
       rctv$current_data$binary %>% 
         aggregate_binary() %>% 
+        purrr::pluck("group") %>% 
+        write.csv(file)
+      
+    }
+    
+  )
+  
+  
+  output$download_range_individual <- shiny::downloadHandler(
+    
+    filename = function() {
+      
+      paste0("calibration_range_individual_", Sys.Date(), ".csv")
+      
+    }, 
+    
+    content = function(file) {
+      
+      rctv$current_data$range %>% 
+        aggregate_range() %>% 
+        purrr::pluck("individual") %>% 
+        write.csv(file)
+      
+    }
+    
+  )
+  
+  output$download_range_group <- shiny::downloadHandler(
+    
+    filename = function() {
+      
+      paste0("calibration_range_group_", Sys.Date(), ".csv")
+      
+    }, 
+    
+    content = function(file) {
+      
+      rctv$current_data$range %>% 
+        aggregate_range() %>% 
         purrr::pluck("group") %>% 
         write.csv(file)
       
