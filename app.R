@@ -42,8 +42,8 @@ ui <- shinydashboard::dashboardPage(
         ), 
         
         shinydashboard::menuSubItem(
-          text = "Charts", 
-          tabName = "binary_charts_screen", 
+          text = "Analysis", 
+          tabName = "binary_analysis_screen", 
           icon = shiny::icon("chart-bar")
         )
         
@@ -60,8 +60,8 @@ ui <- shinydashboard::dashboardPage(
         ), 
         
         shinydashboard::menuSubItem(
-          text = "Charts", 
-          tabName = "range_charts_screen", 
+          text = "Analysis", 
+          tabName = "range_analysis_screen", 
           icon = shiny::icon("chart-bar")
         )
         
@@ -86,7 +86,7 @@ ui <- shinydashboard::dashboardPage(
       ), 
       
       shinydashboard::tabItem(
-        tabName = "binary_charts_screen", 
+        tabName = "binary_analysis_screen", 
         
         shiny::fluidRow(
           shiny::column(
@@ -147,7 +147,7 @@ ui <- shinydashboard::dashboardPage(
       ), 
       
       shinydashboard::tabItem(
-        tabName = "range_charts_screen", 
+        tabName = "range_analysis_screen", 
         
         shiny::fluidRow(
           shiny::column(
@@ -371,8 +371,18 @@ server <- function(input, output, session) {
       reactable::reactable(
         filterable = TRUE, 
         columns = list(
-          Group_Pct_Actual = reactable::colDef(name = "Actual % Correct"), 
-          Group_Pct_Predicted = reactable::colDef(name = "Predicted % Correct")
+          Group_Pct_Actual = reactable::colDef(
+            name = "Actual % Correct", 
+            format = reactable::colFormat(percent = TRUE, digits = 2)
+          ), 
+          Group_Pct_Predicted = reactable::colDef(
+            name = "Predicted % Correct", 
+            format = reactable::colFormat(percent = TRUE, digits = 2)
+          ), 
+          Adjustment_Needed = reactable::colDef(
+            name = "Adjustment Needed", 
+            format = reactable::colFormat(percent = TRUE, digits = 2)
+          )
         )
       )
     
@@ -392,7 +402,10 @@ server <- function(input, output, session) {
             name = "Actual % Correct", 
             format = reactable::colFormat(percent = TRUE, digits = 2)
           ), 
-          Adjustment_Needed = reactable::colDef(name = "Adjustment Needed")
+          Adjustment_Needed = reactable::colDef(
+            name = "Adjustment Needed", 
+            format = reactable::colFormat(digits = 2)
+          )
         )
       )
     
@@ -411,7 +424,12 @@ server <- function(input, output, session) {
       ) %>% tidyr::drop_na() %>%  ### TODO // remove
       echarts4r::e_charts(Group) %>% 
       echarts4r::e_bar(Group_Pct_Actual, name = "Actual % Correct") %>% 
-      echarts4r::e_line(Group_Pct_Predicted, name = "Predicted % Correct") %>% 
+      echarts4r::e_line(
+        Group_Pct_Predicted, 
+        name = "Predicted % Correct", 
+        symbol = "circle", 
+        symbolSize = 20
+      ) %>% 
       echarts4r::e_y_axis(
         formatter = echarts4r::e_axis_formatter(
           style = "percent", 
@@ -443,7 +461,12 @@ server <- function(input, output, session) {
       ) %>% tidyr::drop_na() %>%  ### TODO // remove
       echarts4r::e_charts(Group) %>% 
       echarts4r::e_bar(Group_Pct, name = "Actual % Correct") %>% 
-      echarts4r::e_line(Target, name = "Target % Correct") %>% 
+      echarts4r::e_line(
+        Target, 
+        name = "Target % Correct", 
+        symbol = "circle", 
+        symbolSize = 20
+      ) %>% 
       echarts4r::e_y_axis(
         formatter = echarts4r::e_axis_formatter(
           style = "percent", 
