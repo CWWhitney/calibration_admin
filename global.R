@@ -1,6 +1,6 @@
 
 
-
+# Load global packages
 library(pins)
 
 # Connect to the {pins} board containing the workshop user data

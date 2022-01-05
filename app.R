@@ -1,4 +1,4 @@
-### CALIBRATION APP
+### CALIBRATION ADMIN APP
 ### UNIVERSITY OF BONN
 ### DEVELOPED BY: KETCHBROOK ANALYTICS (MTHOMAS@KETCHBROOKANALYTICS.COM)
 
@@ -6,12 +6,12 @@
 
 ## 1.1 Load Packages ----
 library(shiny)
-library(shinydashboard)
-library(dplyr)
-library(reactable)
-library(stringr)
-library(purrr)
-library(echarts4r)
+library(shinydashboard)   # dashboard layout
+library(dplyr)   # general data prep
+library(reactable)   # interactive tables
+library(stringr)   # working with strings
+library(purrr)   # working with lists
+library(echarts4r)   # interactive charts
 
 ## 1.2 Setup Environment
 # Run "global.R" script to load shared objects across all sessions
@@ -422,8 +422,11 @@ server <- function(input, output, session) {
   ### 3.6.3 Individual Binary Table ----
   output$individual_binary_tbl <- reactable::renderReactable({
     
+    # Require that the "binary" data has been retrieved from the {pins} board
     shiny::req(rctv$current_data$binary)
     
+    # Create an interactive {reactable} table holding the individual "binary"
+    # aggregated data
     rctv$current_data$binary %>% 
       aggregate_binary() %>% 
       purrr::pluck("individual") %>% 
@@ -441,8 +444,11 @@ server <- function(input, output, session) {
   ### 3.6.4 Individual Range Table ----
   output$individual_range_tbl <- reactable::renderReactable({
     
+    # Require that the "range" data has been retrieved from the {pins} board
     shiny::req(rctv$current_data$range)
     
+    # Create an interactive {reactable} table holding the individual "range"
+    # aggregated data
     rctv$current_data$range %>% 
       aggregate_range() %>% 
       purrr::pluck("individual") %>% 
@@ -459,8 +465,11 @@ server <- function(input, output, session) {
   ### 3.6.5 Group Binary Table ----
   output$group_binary_tbl <- reactable::renderReactable({
     
+    # Require that the "binary" data has been retrieved from the {pins} board
     shiny::req(rctv$current_data$binary)
     
+    # Create an interactive {reactable} table holding the group "binary"
+    # aggregated data
     rctv$current_data$binary %>% 
       aggregate_binary() %>% 
       purrr::pluck("group") %>% 
@@ -487,8 +496,11 @@ server <- function(input, output, session) {
   ### 3.6.6 Group Range Table ----
   output$group_range_tbl <- reactable::renderReactable({
     
+    # Require that the "range" data has been retrieved from the {pins} board
     shiny::req(rctv$current_data$range)
     
+    # Create an interactive {reactable} table holding the group "range"
+    # aggregated data
     rctv$current_data$range %>% 
       aggregate_range() %>% 
       purrr::pluck("group") %>% 
@@ -511,8 +523,10 @@ server <- function(input, output, session) {
   ### 3.6.7 Group Binary Chart ----
   output$group_binary_chart <- echarts4r::renderEcharts4r({
     
+    # Require that the "binary" data has been retrieved from the {pins} board
     shiny::req(rctv$current_data$binary)
     
+    # Create an interactive chart containing the group "binary" aggregated data
     rctv$current_data$binary %>% 
       aggregate_binary() %>% 
       purrr::pluck("group") %>% 
@@ -547,8 +561,10 @@ server <- function(input, output, session) {
   ### 3.6.8 Group Range Chart ----
   output$group_range_chart <- echarts4r::renderEcharts4r({
     
+    # Require that the "range" data has been retrieved from the {pins} board
     shiny::req(rctv$current_data$range)
     
+    # Create an interactive chart containing the group "range" aggregated data
     rctv$current_data$range %>% 
       aggregate_range() %>% 
       purrr::pluck("group") %>% 
@@ -588,12 +604,14 @@ server <- function(input, output, session) {
     
     filename = function() {
       
+      # Name the downloaded file
       paste0("calibration_binary_individual_", Sys.Date(), ".csv")
       
     }, 
     
     content = function(file) {
       
+      # Write the data out to a .csv for download
       rctv$current_data$binary %>% 
         aggregate_binary() %>% 
         purrr::pluck("individual") %>% 
@@ -608,12 +626,14 @@ server <- function(input, output, session) {
     
     filename = function() {
       
+      # Name the downloaded file
       paste0("calibration_binary_group_", Sys.Date(), ".csv")
       
     }, 
     
     content = function(file) {
       
+      # Write the data out to a .csv for download
       rctv$current_data$binary %>% 
         aggregate_binary() %>% 
         purrr::pluck("group") %>% 
@@ -628,12 +648,14 @@ server <- function(input, output, session) {
     
     filename = function() {
       
+      # Name the downloaded file
       paste0("calibration_range_individual_", Sys.Date(), ".csv")
       
     }, 
     
     content = function(file) {
       
+      # Write the data out to a .csv for download
       rctv$current_data$range %>% 
         aggregate_range() %>% 
         purrr::pluck("individual") %>% 
@@ -648,12 +670,14 @@ server <- function(input, output, session) {
     
     filename = function() {
       
+      # Name the downloaded file
       paste0("calibration_range_group_", Sys.Date(), ".csv")
       
     }, 
     
     content = function(file) {
       
+      # Write the data out to a .csv for download
       rctv$current_data$range %>% 
         aggregate_range() %>% 
         purrr::pluck("group") %>% 
