@@ -7,7 +7,7 @@ aggregate_binary <- function(binary_data) {
     dplyr::mutate(Correct = ifelse(
       stringr::str_sub(Response, start = 1L, end = 1L) == Truth, TRUE, FALSE
     )) %>% 
-    dplyr::group_by(user, Group) %>% 
+    dplyr::group_by(User, Group) %>% 
     dplyr::summarise(
       Actual = sum(Correct), 
       Predicted = sum(Confidence), 
@@ -51,7 +51,7 @@ aggregate_range <- function(range_data) {
       Truth >= Lower90 & Truth <= Upper90 ~ TRUE, 
       TRUE ~ FALSE
     )) %>% 
-    dplyr::group_by(user, Group) %>% 
+    dplyr::group_by(User, Group) %>% 
     dplyr::summarise(
       Bounded = sum(Bounded), 
       Total = dplyr::n(), 

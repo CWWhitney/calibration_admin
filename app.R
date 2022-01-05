@@ -334,8 +334,8 @@ server <- function(input, output, session) {
       inputId = "choose_student", 
       label = "Select a Student", 
       choices = c("All", unique(
-        rctv$current_data$binary$user, 
-        rctv$current_data$range$user
+        rctv$current_data$binary$User, 
+        rctv$current_data$range$User
       )), 
       selected = "All"   # start with "All" selected by default
     )
@@ -361,7 +361,7 @@ server <- function(input, output, session) {
     if (input$choose_student != "All") {
       
       data <- rctv$current_data$binary %>% 
-        dplyr::filter(user == input$choose_student)
+        dplyr::filter(User == input$choose_student)
       
     }
     
@@ -400,7 +400,7 @@ server <- function(input, output, session) {
     if (input$choose_student != "All") {
       
       data <- rctv$current_data$range %>% 
-        dplyr::filter(user == input$choose_student)
+        dplyr::filter(User == input$choose_student)
       
     }
     

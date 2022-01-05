@@ -15,7 +15,7 @@ get_current_data <- function(board) {
     ) %>% 
     tibble::as_tibble() %>% 
     dplyr::select(
-      user, 
+      User, 
       Group, 
       Question, 
       Response, 
@@ -43,7 +43,7 @@ get_current_data <- function(board) {
     ) %>% 
     tibble::as_tibble() %>% 
     dplyr::select(
-      user, 
+      User, 
       Group, 
       Question, 
       Lower90, 
