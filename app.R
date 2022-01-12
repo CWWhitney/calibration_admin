@@ -425,12 +425,23 @@ server <- function(input, output, session) {
     # Require that the "binary" data has been retrieved from the {pins} board
     shiny::req(rctv$current_data$binary)
     
+    # Capture all of the current "binary" data for (possible) filtering
+    data <- rctv$current_data$binary %>% 
+      aggregate_binary() %>% 
+      purrr::pluck("individual")
+    
+    # Filter the "binary" data for the selected student
+    if (input$choose_student != "All") {
+      
+      data <- data %>% 
+        dplyr::filter(User == input$choose_student)
+      
+    }
+    
     # Create an interactive {reactable} table holding the individual "binary"
     # aggregated data
-    rctv$current_data$binary %>% 
-      aggregate_binary() %>% 
-      purrr::pluck("individual") %>% 
       reactable::reactable(
+        data, 
         filterable = TRUE, 
         columns = list(
           Actual = reactable::colDef(filterable = FALSE), 
@@ -447,12 +458,23 @@ server <- function(input, output, session) {
     # Require that the "range" data has been retrieved from the {pins} board
     shiny::req(rctv$current_data$range)
     
+    # Capture all of the current "range" data for (possible) filtering
+    data <- rctv$current_data$range %>% 
+      aggregate_range() %>% 
+      purrr::pluck("individual")
+    
+    # Filter the "range" data for the selected student
+    if (input$choose_student != "All") {
+      
+      data <- data %>% 
+        dplyr::filter(User == input$choose_student)
+      
+    }
+    
     # Create an interactive {reactable} table holding the individual "range"
     # aggregated data
-    rctv$current_data$range %>% 
-      aggregate_range() %>% 
-      purrr::pluck("individual") %>% 
       reactable::reactable(
+        data, 
         filterable = TRUE, 
         columns = list(
           Bounded = reactable::colDef(filterable = FALSE),
