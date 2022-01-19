@@ -1,0 +1,45 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Calibration Training App <img src="www/university_logo.jpg" align="right" height="200" />
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+The goal of the Calibration Admin App is to help the [University of Bonn](https://www.uni-bonn.de/en/university/) view the individual & group results of the *calibration* assessments they administer in real-time...
+
+## Installation
+
+1. Clone this repository to your local machine
+
+2. Open the **calibration_admin.Rproj** file from the directory on your local machine where you cloned this repository. This should install the {renv} package if you do not already have it installed, but if you don't see that happen in the console, run `install.packages("renv")`.
+
+3. Run `renv::restore()` to install the package dependencies needed to run this app successfully
+
+4. Edit the [global.R](global.R) script as necessary (see [below](#app-parameters))
+
+5. Open the [app.R](app.R) file and execute the code in that script to launch the app
+
+### App Parameters
+
+Before a calibration workshop, the [global.R](global.R#L7) script should be edited to define the following parameter for the workshop:
+
+* The [{pins}](https://pins.rstudio.com/) board on RStudio Connect that has been dedicated for this workshop
+
+*** 
+
+See below for session info for full reproducibility: 
+
+```{r session_info}
+sessionInfo()
+```
