@@ -285,7 +285,7 @@ server <- function(input, output, session) {
     shiny::HTML(
       glue::glue(
         "<iframe width='560' height='315'", 
-        "src='https://www.youtube.com/embed/WE5gT_LlV24'", 
+        "src='https://www.youtube.com/embed/7P2YI9-smfU'", 
         "title='YouTube video player' frameborder='0' allow='accelerometer;", 
         "autoplay; clipboard-write; encrypted-media; gyroscope;", 
         "picture-in-picture' allowfullscreen></iframe>", 

@@ -4,7 +4,7 @@
 library(pins)
 
 # Connect to the {pins} board containing the workshop user data
-board <- pins::board_local()
+board <- pins::board_rsconnect()
 
 # Load custom functions
 fs::dir_ls("R") %>% 
