@@ -4,7 +4,7 @@
 library(pins)
 
 # Connect to the {pins} board containing the workshop user data
-board <- pins::board_rsconnect()
+board <- pins::board_rsconnect(auth = "envvar")
 
 # Load custom functions
 fs::dir_ls("R") %>% 
