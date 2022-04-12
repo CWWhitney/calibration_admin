@@ -12,6 +12,8 @@ library(reactable)   # interactive tables
 library(stringr)   # working with strings
 library(purrr)   # working with lists
 library(echarts4r)   # interactive charts
+library(fs)
+library(pins)
 
 ## 1.2 Setup Environment
 # Run "global.R" script to load shared objects across all sessions
