@@ -5,7 +5,7 @@ library(purrr)
 library(fs)
 
 # Connect to the {pins} board containing the workshop user data
-# board <- pins::board_connect(auth = "envvar")
+board <- pins::board_connect(auth = "envvar")
 
 # Load custom functions
 fs::dir_ls("R") |> 
@@ -13,17 +13,17 @@ fs::dir_ls("R") |>
   purrr::quietly()
 
 
-# # Define Google API authentication type
-# # If the Google Sheet is public, simply call `googlesheets4::gs4_death()` here
-# # to indicate that no authentication is necessary
-# googlesheets4::gs4_deauth()
-# 
-# # Define the URL of the Google Sheet
-# google_sheets_url <- "https://docs.google.com/spreadsheets/d/1yTboPXmDMF43YmjsuEH7bbPwcEj4fPfBD68rNWrOPSI/edit?usp=sharing"
-# 
-# questions_full <- get_full_data(
-#   gs_url = google_sheets_url
-# )
+# Define Google API authentication type
+# If the Google Sheet is public, simply call `googlesheets4::gs4_death()` here
+# to indicate that no authentication is necessary
+googlesheets4::gs4_deauth()
+
+# Define the URL of the Google Sheet
+google_sheets_url <- "https://docs.google.com/spreadsheets/d/1yTboPXmDMF43YmjsuEH7bbPwcEj4fPfBD68rNWrOPSI/edit?usp=sharing"
+
+questions_full <- get_full_data(
+  gs_url = google_sheets_url
+)
 
 # Define the language questions will be asked in
 language <- "German"
