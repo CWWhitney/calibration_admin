@@ -8,6 +8,7 @@
 library(shiny)
 library(shinydashboard)   # dashboard layout
 library(dplyr)   # general data prep
+library(rhandsontable) # excel like interactive tables
 library(reactable)   # interactive tables
 library(stringr)   # working with strings
 library(purrr)   # working with lists
@@ -53,6 +54,27 @@ ui <- shinydashboard::dashboardPage(
     
     ### 2.2.3 Sidebar Menu Items ----
     shinydashboard::sidebarMenu(
+      
+      # Create the "Question Selection" menu item
+      shinydashboard::menuItem(
+        text = "Question Selection", 
+        icon = shiny::icon("clipboard-question"), 
+        
+        # Create the "Question Selection:Set Creator" menu sub-item
+        shinydashboard::menuSubItem(
+          text = "Set Creator", 
+          tabName = "question_selection_screen", 
+          icon = shiny::icon("table")
+        ), 
+        
+        # Create the "Question Selection: Set Controller" menu sub-item
+        shinydashboard::menuSubItem(
+          text = "Set Controller", 
+          tabName = "question_set_screen", 
+          icon = shiny::icon("chart-bar")
+        )
+        
+      ),
       
       # Create the "Binary" menu item
       shinydashboard::menuItem(
@@ -103,6 +125,31 @@ ui <- shinydashboard::dashboardPage(
   shinydashboard::dashboardBody(
     
     shinydashboard::tabItems(
+      
+      ### Question Selection Screen----
+      shinydashboard::tabItem(
+        tabName = "question_selection_screen", 
+        
+        shiny::fluidRow(
+          shiny::column(
+            width = 12, 
+            # Display the {reactable} table containing the raw "binary" data
+            mod_question_selection_ui("mod_question_selection")
+          )
+        )
+      ), 
+      
+      ### Question Set Screen ----
+      shinydashboard::tabItem(
+        tabName = "question_set_screen", 
+        
+        shiny::fluidRow(
+          shiny::column(
+            width = 12,
+            mod_question_sets_display_ui("mod_question_sets_display")
+          )
+        )
+      ),
       
       ### 2.3.1 "Binary: Raw Data" Screen----
       shinydashboard::tabItem(
@@ -275,11 +322,11 @@ server <- function(input, output, session) {
   ## 3.1 Initialize ReactiveValues ----
   # Create a `reactiveValues` object that holds our reactive objects
   rctv <- shiny::reactiveValues()
-
+  
   ## 3.2 Get Initial Data ----
   # Download the {pins} data from the current workshop board
-  rctv$current_data <- get_current_data(board = board)
-
+  # rctv$current_data <- get_current_data(board = board)
+  
   ## 3.3 Welcome Modal ----
   # On app launch, display a pop-up modal welcoming the admin user
   shiny::modalDialog(
@@ -295,7 +342,7 @@ server <- function(input, output, session) {
       )
     ), 
     "This app contains the live results of each student in the current workshop."
-  ) %>%
+  ) |>
     shiny::showModal()
   
   ## 3.4 Refresh Data ----
@@ -314,7 +361,7 @@ server <- function(input, output, session) {
     Sys.sleep(1)
     
     # Re-download the {pins} data from the workshop board
-    rctv$current_data <- get_current_data(board = board)
+    # rctv$current_data <- get_current_data(board = board)
     
     # Remove the notification
     shiny::removeNotification(id = "wait_notification")
@@ -346,29 +393,40 @@ server <- function(input, output, session) {
   
   ## 3.6 Interactive Tables & Charts ----
   
+  question_sets <- reactiveVal(
+    data.frame(
+      question_set_name = character(0),
+      encrypted_question_set_code = character(0)
+    )
+  )
+  
+  mod_question_selection_server("mod_question_selection", questions_full, question_sets)
+  mod_question_sets_display_server("mod_question_sets_display", question_sets)
+  
+  
   ### 3.6.1 Binary Raw Table ----
   output$binary_raw_tbl <- reactable::renderReactable({
-
+    
     # Require that the "binary" data has been retrieved from the {pins} board, 
     # and that a valid selection from the "Students" drop-down has been made
     shiny::req(
       rctv$current_data$binary, 
       input$choose_student
     )
-
+    
     # Capture all of the current "binary" data for (possible) filtering
     data <- rctv$current_data$binary
     
     # Filter the "binary" data for the selected student
     if (input$choose_student != "All") {
       
-      data <- rctv$current_data$binary %>% 
+      data <- rctv$current_data$binary |> 
         dplyr::filter(User == input$choose_student)
       
     }
     
     # Create the interactive {reactable} table holding the "binary" raw data
-    data %>%
+    data |>
       reactable::reactable(
         columns = list(
           Confidence = reactable::colDef(
@@ -382,32 +440,32 @@ server <- function(input, output, session) {
           )
         )
       )
-
+    
   })
-
-  ### 3.6.2 Range Raw Table ----
+  
+  mod_question_sets_display_ui("mod_question_sets_display")### 3.6.2 Range Raw Table ----
   output$range_raw_tbl <- reactable::renderReactable({
-
+    
     # Require that the "range" data has been retrieved from the {pins} board, 
     # and that a valid selection from the "Students" drop-down has been made
     shiny::req(
       rctv$current_data$range, 
       input$choose_student
     )
-
+    
     # Capture all of the current "range" data for (possible) filtering
     data <- rctv$current_data$range
     
     # Filter the "range" data for the selected student
     if (input$choose_student != "All") {
       
-      data <- rctv$current_data$range %>% 
+      data <- rctv$current_data$range |> 
         dplyr::filter(User == input$choose_student)
       
     }
     
     # Create the interactive {reactable} table holding the "range" raw data
-    data %>%
+    data |>
       reactable::reactable(
         columns = list(
           Lower90 = reactable::colDef(name = "Lower Bound"), 
@@ -418,7 +476,7 @@ server <- function(input, output, session) {
           )
         )
       )
-
+    
   })
   
   ### 3.6.3 Individual Binary Table ----
@@ -428,29 +486,29 @@ server <- function(input, output, session) {
     shiny::req(rctv$current_data$binary)
     
     # Capture all of the current "binary" data for (possible) filtering
-    data <- rctv$current_data$binary %>% 
-      aggregate_binary() %>% 
+    data <- rctv$current_data$binary |> 
+      aggregate_binary() |> 
       purrr::pluck("individual")
     
     # Filter the "binary" data for the selected student
     if (input$choose_student != "All") {
       
-      data <- data %>% 
+      data <- data |> 
         dplyr::filter(User == input$choose_student)
       
     }
     
     # Create an interactive {reactable} table holding the individual "binary"
     # aggregated data
-      reactable::reactable(
-        data, 
-        filterable = TRUE, 
-        columns = list(
-          Actual = reactable::colDef(filterable = FALSE), 
-          Predicted = reactable::colDef(filterable = FALSE), 
-          Total = reactable::colDef(filterable = FALSE)
-        )
+    reactable::reactable(
+      data, 
+      filterable = TRUE, 
+      columns = list(
+        Actual = reactable::colDef(filterable = FALSE), 
+        Predicted = reactable::colDef(filterable = FALSE), 
+        Total = reactable::colDef(filterable = FALSE)
       )
+    )
     
   })
   
@@ -461,28 +519,28 @@ server <- function(input, output, session) {
     shiny::req(rctv$current_data$range)
     
     # Capture all of the current "range" data for (possible) filtering
-    data <- rctv$current_data$range %>% 
-      aggregate_range() %>% 
+    data <- rctv$current_data$range |> 
+      aggregate_range() |> 
       purrr::pluck("individual")
     
     # Filter the "range" data for the selected student
     if (input$choose_student != "All") {
       
-      data <- data %>% 
+      data <- data |> 
         dplyr::filter(User == input$choose_student)
       
     }
     
     # Create an interactive {reactable} table holding the individual "range"
     # aggregated data
-      reactable::reactable(
-        data, 
-        filterable = TRUE, 
-        columns = list(
-          Bounded = reactable::colDef(filterable = FALSE),
-          Total = reactable::colDef(filterable = FALSE)
-        )
+    reactable::reactable(
+      data, 
+      filterable = TRUE, 
+      columns = list(
+        Bounded = reactable::colDef(filterable = FALSE),
+        Total = reactable::colDef(filterable = FALSE)
       )
+    )
     
   })
   
@@ -494,9 +552,9 @@ server <- function(input, output, session) {
     
     # Create an interactive {reactable} table holding the group "binary"
     # aggregated data
-    rctv$current_data$binary %>% 
-      aggregate_binary() %>% 
-      purrr::pluck("group") %>% 
+    rctv$current_data$binary |> 
+      aggregate_binary() |> 
+      purrr::pluck("group") |> 
       reactable::reactable(
         filterable = TRUE, 
         columns = list(
@@ -525,9 +583,9 @@ server <- function(input, output, session) {
     
     # Create an interactive {reactable} table holding the group "range"
     # aggregated data
-    rctv$current_data$range %>% 
-      aggregate_range() %>% 
-      purrr::pluck("group") %>% 
+    rctv$current_data$range |> 
+      aggregate_range() |> 
+      purrr::pluck("group") |> 
       reactable::reactable(
         filterable = TRUE, 
         columns = list(
@@ -551,33 +609,33 @@ server <- function(input, output, session) {
     shiny::req(rctv$current_data$binary)
     
     # Create an interactive chart containing the group "binary" aggregated data
-    rctv$current_data$binary %>% 
-      aggregate_binary() %>% 
-      purrr::pluck("group") %>% 
+    rctv$current_data$binary |> 
+      aggregate_binary() |> 
+      purrr::pluck("group") |> 
       dplyr::mutate(
         Group = paste0("Group ", Group)
-      ) %>% tidyr::drop_na() %>%  ### TODO // remove
-      echarts4r::e_charts(Group) %>% 
-      echarts4r::e_bar(Group_Pct_Actual, name = "Actual % Correct") %>% 
+      ) |> tidyr::drop_na() |>  ### TODO // remove
+      echarts4r::e_charts(Group) |> 
+      echarts4r::e_bar(Group_Pct_Actual, name = "Actual % Correct") |> 
       echarts4r::e_line(
         Group_Pct_Predicted, 
         name = "Predicted % Correct", 
         symbol = "circle", 
         symbolSize = 20
-      ) %>% 
+      ) |> 
       echarts4r::e_y_axis(
         formatter = echarts4r::e_axis_formatter(
           style = "percent", 
           digits = 0
         )
-      ) %>% 
+      ) |> 
       echarts4r::e_tooltip(
         trigger = "axis", 
         formatter = echarts4r::e_tooltip_pointer_formatter(
           style = "percent", 
           digits = 1
         )
-      ) %>% 
+      ) |> 
       echarts4r::e_toolbox_feature(feature = "saveAsImage")
     
   })
@@ -589,36 +647,36 @@ server <- function(input, output, session) {
     shiny::req(rctv$current_data$range)
     
     # Create an interactive chart containing the group "range" aggregated data
-    rctv$current_data$range %>% 
-      aggregate_range() %>% 
-      purrr::pluck("group") %>% 
+    rctv$current_data$range |> 
+      aggregate_range() |> 
+      purrr::pluck("group") |> 
       dplyr::mutate(
         Group = paste0("Group ", Group), 
         Target = 0.90
-      ) %>% tidyr::drop_na() %>%  ### TODO // remove
-      echarts4r::e_charts(Group) %>% 
-      echarts4r::e_bar(Group_Pct, name = "Actual % Correct") %>% 
+      ) |> tidyr::drop_na() |>  ### TODO // remove
+      echarts4r::e_charts(Group) |> 
+      echarts4r::e_bar(Group_Pct, name = "Actual % Correct") |> 
       echarts4r::e_line(
         Target, 
         name = "Target % Correct", 
         symbol = "circle", 
         symbolSize = 20
-      ) %>% 
+      ) |> 
       echarts4r::e_y_axis(
         formatter = echarts4r::e_axis_formatter(
           style = "percent", 
           digits = 0
         )
-      ) %>% 
+      ) |> 
       echarts4r::e_tooltip(
         trigger = "axis", 
         formatter = echarts4r::e_tooltip_pointer_formatter(
           style = "percent", 
           digits = 1
         )
-      ) %>% 
+      ) |> 
       echarts4r::e_toolbox_feature(feature = "saveAsImage")
-        
+    
   })
   
   ## 3.7 Data Download Handlers ----
@@ -636,9 +694,9 @@ server <- function(input, output, session) {
     content = function(file) {
       
       # Write the data out to a .csv for download
-      rctv$current_data$binary %>% 
-        aggregate_binary() %>% 
-        purrr::pluck("individual") %>% 
+      rctv$current_data$binary |> 
+        aggregate_binary() |> 
+        purrr::pluck("individual") |> 
         write.csv(file)
       
     }
@@ -658,9 +716,9 @@ server <- function(input, output, session) {
     content = function(file) {
       
       # Write the data out to a .csv for download
-      rctv$current_data$binary %>% 
-        aggregate_binary() %>% 
-        purrr::pluck("group") %>% 
+      rctv$current_data$binary |> 
+        aggregate_binary() |> 
+        purrr::pluck("group") |> 
         write.csv(file)
       
     }
@@ -680,9 +738,9 @@ server <- function(input, output, session) {
     content = function(file) {
       
       # Write the data out to a .csv for download
-      rctv$current_data$range %>% 
-        aggregate_range() %>% 
-        purrr::pluck("individual") %>% 
+      rctv$current_data$range |> 
+        aggregate_range() |> 
+        purrr::pluck("individual") |> 
         write.csv(file)
       
     }
@@ -702,9 +760,9 @@ server <- function(input, output, session) {
     content = function(file) {
       
       # Write the data out to a .csv for download
-      rctv$current_data$range %>% 
-        aggregate_range() %>% 
-        purrr::pluck("group") %>% 
+      rctv$current_data$range |> 
+        aggregate_range() |> 
+        purrr::pluck("group") |> 
         write.csv(file)
       
     }

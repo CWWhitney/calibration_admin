@@ -3,11 +3,11 @@
 
 aggregate_binary <- function(binary_data) {
   
-  individual <- binary_data %>% 
+  individual <- binary_data |> 
     dplyr::mutate(Correct = ifelse(
       stringr::str_sub(Response, start = 1L, end = 1L) == Truth, TRUE, FALSE
-    )) %>% 
-    dplyr::group_by(User, Group) %>% 
+    )) |> 
+    dplyr::group_by(User, Group) |> 
     dplyr::summarise(
       Actual = sum(Correct), 
       Predicted = sum(Confidence), 
@@ -15,8 +15,8 @@ aggregate_binary <- function(binary_data) {
       .groups = "drop"
     )
   
-  group <- individual %>% 
-    dplyr::group_by(Group) %>% 
+  group <- individual |> 
+    dplyr::group_by(Group) |> 
     dplyr::summarise(
       Group_Pct_Actual = sum(Actual) / (dplyr::n() * mean(Total)), 
       Group_Pct_Predicted = sum(Predicted) / (dplyr::n() * mean(Total)), 
@@ -46,20 +46,20 @@ calculate_range_adjustment <- function(group_pct) {
 
 aggregate_range <- function(range_data) {
   
-  individual <- range_data %>% 
+  individual <- range_data |> 
     dplyr::mutate(Bounded = dplyr::case_when(
       Truth >= Lower90 & Truth <= Upper90 ~ TRUE, 
       TRUE ~ FALSE
-    )) %>% 
-    dplyr::group_by(User, Group) %>% 
+    )) |> 
+    dplyr::group_by(User, Group) |> 
     dplyr::summarise(
       Bounded = sum(Bounded), 
       Total = dplyr::n(), 
       .groups = "drop"
     )
   
-  group <- individual %>% 
-    dplyr::group_by(Group) %>% 
+  group <- individual |> 
+    dplyr::group_by(Group) |> 
     dplyr::summarise(
       Group_Pct = sum(Bounded) / (dplyr::n() * mean(Total)), 
       Adjustment_Needed = calculate_range_adjustment(group_pct = Group_Pct), 
