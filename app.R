@@ -2,9 +2,9 @@
 ### UNIVERSITY OF BONN
 ### DEVELOPED BY: KETCHBROOK ANALYTICS (MTHOMAS@KETCHBROOKANALYTICS.COM)
 
-# 1.0 SETUP ----
+# SETUP ----------------------------------------------------------------------
 
-## 1.1 Load Packages ----
+## Load Packages -------------------------------------------------------------
 library(shiny)
 library(shinydashboard)   # dashboard layout
 library(dplyr)   # general data prep
@@ -16,25 +16,26 @@ library(echarts4r)   # interactive charts
 library(fs)
 library(pins)
 
-## 1.2 Setup Environment
+## Setup Environment ---------------------------------------------------------
 # Run "global.R" script to load shared objects across all sessions
 source("global.R")
 
 
-# 2.0 UI ----
+# UI -------------------------------------------------------------------------
+
 ui <- shinydashboard::dashboardPage(
   
-  ## 2.1 Header ----
+  ## Header ------------------------------------------------------------------
   shinydashboard::dashboardHeader(
     title = "Calibrator: Admin"
   ),
   
-  ## 2.2 Sidebar ----
+  ## Sidebar -----------------------------------------------------------------
   shinydashboard::dashboardSidebar(
     
     shiny::br(), 
     
-    ### 2.2.1 "Refresh" Button ----
+    ### "Refresh" ------------------------------------------------------------
     # Create a button to refresh the {pins} data from RStudio Connect and 
     # retrieve the most up-to-date data from the workshop
     shiny::actionButton(
@@ -45,31 +46,31 @@ ui <- shinydashboard::dashboardPage(
       width = "200px"
     ), 
     
-    ### 2.2.2 "Select Student" Drop-down ----
+    ### "Select Student" ----------------------------------------------------
     # Drop-down menu for selecting an individual workshop student to filter the 
     # app data by
     shiny::uiOutput(outputId = "select_student_picker"), 
     
     shiny::hr(), 
     
-    ### 2.2.3 Sidebar Menu Items ----
+    ### Sidebar Menu Items ---------------------------------------------------
     shinydashboard::sidebarMenu(
       
-      # Create the "Question Selection" menu item
+      # Create the "Question" menu item
       shinydashboard::menuItem(
-        text = "Question Selection", 
+        text = "Question", 
         icon = shiny::icon("clipboard-question"), 
         
-        # Create the "Question Selection:Set Creator" menu sub-item
+        # Create the "Selection Screen" menu sub-item
         shinydashboard::menuSubItem(
-          text = "Set Creator", 
+          text = "Selection Screen", 
           tabName = "question_selection_screen", 
           icon = shiny::icon("table")
         ), 
         
-        # Create the "Question Selection: Set Controller" menu sub-item
+        # Create the "Set Screen" menu sub-item
         shinydashboard::menuSubItem(
-          text = "Set Controller", 
+          text = "Set Screen", 
           tabName = "question_set_screen", 
           icon = shiny::icon("chart-bar")
         )
@@ -81,16 +82,16 @@ ui <- shinydashboard::dashboardPage(
         text = "Binary", 
         icon = shiny::icon("check-circle"), 
         
-        # Create the "Binary: Raw Data" menu sub-item
+        # Create the "Raw Data Screen" menu sub-item
         shinydashboard::menuSubItem(
-          text = "Raw Data", 
+          text = "Raw Data Screen", 
           tabName = "binary_raw_screen", 
           icon = shiny::icon("table")
         ), 
         
-        # Create the "Binary: Analysis" menu sub-item
+        # Create the "Analysis Screen" menu sub-item
         shinydashboard::menuSubItem(
-          text = "Analysis", 
+          text = "Analysis Screen", 
           tabName = "binary_analysis_screen", 
           icon = shiny::icon("chart-bar")
         )
@@ -102,16 +103,16 @@ ui <- shinydashboard::dashboardPage(
         text = "Range", 
         icon = shiny::icon("sort-numeric-down"), 
         
-        # Create the "Range: Raw Data" menu sub-item
+        # Create the "Raw Data Screen" menu sub-item
         shinydashboard::menuSubItem(
-          text = "Raw Data", 
+          text = "Raw Data Screen", 
           tabName = "range_raw_screen", 
           icon = shiny::icon("table")
         ), 
         
-        # Create the "Range: Analysis" menu sub-item
+        # Create the "Analysis Screen" menu sub-item
         shinydashboard::menuSubItem(
-          text = "Analysis", 
+          text = "Analysis Screen", 
           tabName = "range_analysis_screen", 
           icon = shiny::icon("chart-bar")
         )
@@ -121,12 +122,14 @@ ui <- shinydashboard::dashboardPage(
     
   ),
   
-  ## 2.3 Body ----
+  ## Body --------------------------------------------------------------------
   shinydashboard::dashboardBody(
     
     shinydashboard::tabItems(
       
-      ### Question Selection Screen----
+      ### Question -----------------------------------------------------------
+      
+      #### Selection Screen --------------------------------------------------
       shinydashboard::tabItem(
         tabName = "question_selection_screen", 
         
@@ -139,7 +142,7 @@ ui <- shinydashboard::dashboardPage(
         )
       ), 
       
-      ### Question Set Screen ----
+      #### Set Screen --------------------------------------------------------
       shinydashboard::tabItem(
         tabName = "question_set_screen", 
         
@@ -151,7 +154,9 @@ ui <- shinydashboard::dashboardPage(
         )
       ),
       
-      ### 2.3.1 "Binary: Raw Data" Screen----
+      ### Binary -------------------------------------------------------------
+      
+      #### Raw Data Screen ---------------------------------------------------
       shinydashboard::tabItem(
         tabName = "binary_raw_screen", 
         
@@ -165,7 +170,7 @@ ui <- shinydashboard::dashboardPage(
         )
       ), 
       
-      ### 2.3.2 "Binary: Analysis" Screen ----
+      #### Analysis Screen ---------------------------------------------------
       shinydashboard::tabItem(
         tabName = "binary_analysis_screen", 
         
@@ -177,7 +182,7 @@ ui <- shinydashboard::dashboardPage(
             # table
             shiny::tabsetPanel(
               
-              #### 2.3.2a "Binary: Individual" Table ----
+              ##### Individual Table ------------------------------------------
               shiny::tabPanel(
                 title = "Individual", 
                 shiny::br(), 
@@ -199,7 +204,7 @@ ui <- shinydashboard::dashboardPage(
                 
               ), 
               
-              #### 2.3.2b "Binary: Group" Table ----
+              ##### Group Table -----------------------------------------------
               shiny::tabPanel(
                 title = "Group", 
                 shiny::br(), 
@@ -224,14 +229,16 @@ ui <- shinydashboard::dashboardPage(
             
             shiny::hr(), 
             
-            #### 2.3.2c "Binary: Group" Chart ----
+            ##### Group Chart ------------------------------------------------
             echarts4r::echarts4rOutput(outputId = "group_binary_chart")
             
           )
         )
       ), 
       
-      ### 2.3.3 "Range: Raw Data" Screen ----
+      ### Range --------------------------------------------------------------
+      
+      #### Raw Data Screen ---------------------------------------------------
       shinydashboard::tabItem(
         tabName = "range_raw_screen", 
         
@@ -245,7 +252,7 @@ ui <- shinydashboard::dashboardPage(
         )
       ), 
       
-      ### 2.3.4 "Range: Analysis" Screen ----
+      #### Analysis Screen ---------------------------------------------------
       shinydashboard::tabItem(
         tabName = "range_analysis_screen", 
         
@@ -257,7 +264,7 @@ ui <- shinydashboard::dashboardPage(
             # table
             shiny::tabsetPanel(
               
-              #### 2.3.4a "Range: Individual" Table ----
+              ##### Individual Table ------------------------------------------
               shiny::tabPanel(
                 title = "Individual", 
                 shiny::br(), 
@@ -278,7 +285,7 @@ ui <- shinydashboard::dashboardPage(
                 
               ), 
               
-              #### 2.3.4b "Range: Group" Table ----
+              ##### Group Table -----------------------------------------------
               shiny::tabPanel(
                 title = "Group", 
                 shiny::br(), 
@@ -300,7 +307,7 @@ ui <- shinydashboard::dashboardPage(
             
             shiny::hr(), 
             
-            #### 2.3.4c "Range: Group" Chart ----
+            ##### Group Chart ------------------------------------------------
             echarts4r::echarts4rOutput(outputId = "group_range_chart")
             
           )
@@ -315,19 +322,19 @@ ui <- shinydashboard::dashboardPage(
   skin = "green"
 )
 
+# SERVER ---------------------------------------------------------------------
 
-# 3.0 SERVER ----
 server <- function(input, output, session) {
   
-  ## 3.1 Initialize ReactiveValues ----
+  ## Initialize ReactiveValues ------------------------------------------------
   # Create a `reactiveValues` object that holds our reactive objects
   rctv <- shiny::reactiveValues()
   
-  ## 3.2 Get Initial Data ----
+  ## Get Initial Data ---------------------------------------------------------
   # Download the {pins} data from the current workshop board
   # rctv$current_data <- get_current_data(board = board)
   
-  ## 3.3 Welcome Modal ----
+  ## Welcome Modal ------------------------------------------------------------
   # On app launch, display a pop-up modal welcoming the admin user
   shiny::modalDialog(
     title = "Welcome, Admin!", 
@@ -345,7 +352,7 @@ server <- function(input, output, session) {
   ) |>
     shiny::showModal()
   
-  ## 3.4 Refresh Data ----
+  ## "Refresh" -----------------------------------------------------------------
   # When the "Refresh Data" button is clicked...
   shiny::observeEvent(input$refresh_btn, {
     
@@ -368,9 +375,7 @@ server <- function(input, output, session) {
     
   })
   
-  
-  
-  ## 3.5 Reactive Drop-Down Picker ----
+  ## "Select Student" ---------------------------------------------------------
   # Create a dynamic drop-down list of each student in the workshop
   output$select_student_picker <- shiny::renderUI({
     
@@ -391,20 +396,30 @@ server <- function(input, output, session) {
     
   })
   
-  ## 3.6 Interactive Tables & Charts ----
+  ## Interactive Tables & Charts ----------------------------------------------
+  
+  ### Question ---------------------------------------------------------------
   
   question_sets <- reactiveVal(
-    data.frame(
-      question_set_name = character(0),
-      encrypted_question_set_code = character(0)
-    )
+    question_sets_static
   )
   
-  mod_question_selection_server("mod_question_selection", questions_full, question_sets)
-  mod_question_sets_display_server("mod_question_sets_display", question_sets)
+  #### Selection Screen ------------------------------------------------------
+  mod_question_selection_server(
+    "mod_question_selection", 
+    questions_full, 
+    question_sets
+  )
   
+  #### Set Screen ------------------------------------------------------------
+  mod_question_sets_display_server(
+    "mod_question_sets_display", 
+    question_sets
+  )
   
-  ### 3.6.1 Binary Raw Table ----
+  ### Binary ------------------------------------------------------------------
+  
+  #### Raw Data Screen -------------------------------------------------------
   output$binary_raw_tbl <- reactable::renderReactable({
     
     # Require that the "binary" data has been retrieved from the {pins} board, 
@@ -443,43 +458,9 @@ server <- function(input, output, session) {
     
   })
   
-  mod_question_sets_display_ui("mod_question_sets_display")### 3.6.2 Range Raw Table ----
-  output$range_raw_tbl <- reactable::renderReactable({
-    
-    # Require that the "range" data has been retrieved from the {pins} board, 
-    # and that a valid selection from the "Students" drop-down has been made
-    shiny::req(
-      rctv$current_data$range, 
-      input$choose_student
-    )
-    
-    # Capture all of the current "range" data for (possible) filtering
-    data <- rctv$current_data$range
-    
-    # Filter the "range" data for the selected student
-    if (input$choose_student != "All") {
-      
-      data <- rctv$current_data$range |> 
-        dplyr::filter(User == input$choose_student)
-      
-    }
-    
-    # Create the interactive {reactable} table holding the "range" raw data
-    data |>
-      reactable::reactable(
-        columns = list(
-          Lower90 = reactable::colDef(name = "Lower Bound"), 
-          Upper90 = reactable::colDef(name = "Upper Bound"), 
-          RelativeError = reactable::colDef(
-            name = "Relative Error", 
-            format = reactable::colFormat(digits = 2)
-          )
-        )
-      )
-    
-  })
+  #### Analysis Screen -------------------------------------------------------
   
-  ### 3.6.3 Individual Binary Table ----
+  ##### Individual Table -----------------------------------------------------
   output$individual_binary_tbl <- reactable::renderReactable({
     
     # Require that the "binary" data has been retrieved from the {pins} board
@@ -512,39 +493,7 @@ server <- function(input, output, session) {
     
   })
   
-  ### 3.6.4 Individual Range Table ----
-  output$individual_range_tbl <- reactable::renderReactable({
-    
-    # Require that the "range" data has been retrieved from the {pins} board
-    shiny::req(rctv$current_data$range)
-    
-    # Capture all of the current "range" data for (possible) filtering
-    data <- rctv$current_data$range |> 
-      aggregate_range() |> 
-      purrr::pluck("individual")
-    
-    # Filter the "range" data for the selected student
-    if (input$choose_student != "All") {
-      
-      data <- data |> 
-        dplyr::filter(User == input$choose_student)
-      
-    }
-    
-    # Create an interactive {reactable} table holding the individual "range"
-    # aggregated data
-    reactable::reactable(
-      data, 
-      filterable = TRUE, 
-      columns = list(
-        Bounded = reactable::colDef(filterable = FALSE),
-        Total = reactable::colDef(filterable = FALSE)
-      )
-    )
-    
-  })
-  
-  ### 3.6.5 Group Binary Table ----
+  ##### Group Table ----------------------------------------------------------
   output$group_binary_tbl <- reactable::renderReactable({
     
     # Require that the "binary" data has been retrieved from the {pins} board
@@ -575,34 +524,7 @@ server <- function(input, output, session) {
     
   })
   
-  ### 3.6.6 Group Range Table ----
-  output$group_range_tbl <- reactable::renderReactable({
-    
-    # Require that the "range" data has been retrieved from the {pins} board
-    shiny::req(rctv$current_data$range)
-    
-    # Create an interactive {reactable} table holding the group "range"
-    # aggregated data
-    rctv$current_data$range |> 
-      aggregate_range() |> 
-      purrr::pluck("group") |> 
-      reactable::reactable(
-        filterable = TRUE, 
-        columns = list(
-          Group_Pct = reactable::colDef(
-            name = "Actual % Correct", 
-            format = reactable::colFormat(percent = TRUE, digits = 2)
-          ), 
-          Adjustment_Needed = reactable::colDef(
-            name = "Adjustment Needed", 
-            format = reactable::colFormat(digits = 2)
-          )
-        )
-      )
-    
-  })
-  
-  ### 3.6.7 Group Binary Chart ----
+  ##### Group Chart ----------------------------------------------------------
   output$group_binary_chart <- echarts4r::renderEcharts4r({
     
     # Require that the "binary" data has been retrieved from the {pins} board
@@ -640,7 +562,106 @@ server <- function(input, output, session) {
     
   })
   
-  ### 3.6.8 Group Range Chart ----
+  ### Range -------------------------------------------------------------------
+  
+  #### Raw Data Screen -------------------------------------------------------
+  output$range_raw_tbl <- reactable::renderReactable({
+    
+    # Require that the "range" data has been retrieved from the {pins} board, 
+    # and that a valid selection from the "Students" drop-down has been made
+    shiny::req(
+      rctv$current_data$range, 
+      input$choose_student
+    )
+    
+    # Capture all of the current "range" data for (possible) filtering
+    data <- rctv$current_data$range
+    
+    # Filter the "range" data for the selected student
+    if (input$choose_student != "All") {
+      
+      data <- rctv$current_data$range |> 
+        dplyr::filter(User == input$choose_student)
+      
+    }
+    
+    # Create the interactive {reactable} table holding the "range" raw data
+    data |>
+      reactable::reactable(
+        columns = list(
+          Lower90 = reactable::colDef(name = "Lower Bound"), 
+          Upper90 = reactable::colDef(name = "Upper Bound"), 
+          RelativeError = reactable::colDef(
+            name = "Relative Error", 
+            format = reactable::colFormat(digits = 2)
+          )
+        )
+      )
+    
+  })
+  
+  #### Analysis Screen -------------------------------------------------------
+  
+  ##### Individual Table -----------------------------------------------------
+  output$individual_range_tbl <- reactable::renderReactable({
+    
+    # Require that the "range" data has been retrieved from the {pins} board
+    shiny::req(rctv$current_data$range)
+    
+    # Capture all of the current "range" data for (possible) filtering
+    data <- rctv$current_data$range |> 
+      aggregate_range() |> 
+      purrr::pluck("individual")
+    
+    # Filter the "range" data for the selected student
+    if (input$choose_student != "All") {
+      
+      data <- data |> 
+        dplyr::filter(User == input$choose_student)
+      
+    }
+    
+    # Create an interactive {reactable} table holding the individual "range"
+    # aggregated data
+    reactable::reactable(
+      data, 
+      filterable = TRUE, 
+      columns = list(
+        Bounded = reactable::colDef(filterable = FALSE),
+        Total = reactable::colDef(filterable = FALSE)
+      )
+    )
+    
+  })
+  
+  ##### Group Table ----------------------------------------------------------
+  output$group_range_tbl <- reactable::renderReactable({
+    
+    # Require that the "range" data has been retrieved from the {pins} board
+    shiny::req(rctv$current_data$range)
+    
+    # Create an interactive {reactable} table holding the group "range"
+    # aggregated data
+    rctv$current_data$range |> 
+      aggregate_range() |> 
+      purrr::pluck("group") |> 
+      reactable::reactable(
+        filterable = TRUE, 
+        columns = list(
+          Group_Pct = reactable::colDef(
+            name = "Actual % Correct", 
+            format = reactable::colFormat(percent = TRUE, digits = 2)
+          ), 
+          Adjustment_Needed = reactable::colDef(
+            name = "Adjustment Needed", 
+            format = reactable::colFormat(digits = 2)
+          )
+        )
+      )
+    
+  })
+  
+  ##### Group Chart ----------------------------------------------------------
   output$group_range_chart <- echarts4r::renderEcharts4r({
     
     # Require that the "range" data has been retrieved from the {pins} board
@@ -679,9 +700,9 @@ server <- function(input, output, session) {
     
   })
   
-  ## 3.7 Data Download Handlers ----
+  ## Data Download Handlers --------------------------------------------------
   
-  ### 3.7.1 Download Binary Individual Data ----
+  ### Download Binary Individual Data ----------------------------------------
   output$download_binary_individual <- shiny::downloadHandler(
     
     filename = function() {
@@ -703,7 +724,7 @@ server <- function(input, output, session) {
     
   )
   
-  ### 3.7.2 Download Binary Group Data ----
+  ### Download Binary Group Data ---------------------------------------------
   output$download_binary_group <- shiny::downloadHandler(
     
     filename = function() {
@@ -725,7 +746,7 @@ server <- function(input, output, session) {
     
   )
   
-  ### 3.7.3 Download Range Individual Data ----
+  ### Download Range Individual Data -----------------------------------------
   output$download_range_individual <- shiny::downloadHandler(
     
     filename = function() {
@@ -747,7 +768,7 @@ server <- function(input, output, session) {
     
   )
   
-  ### 3.7.4 Download Range Group Data ----
+  ### Download Range Group Data ----------------------------------------------
   output$download_range_group <- shiny::downloadHandler(
     
     filename = function() {

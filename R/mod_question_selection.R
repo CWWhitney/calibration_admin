@@ -1,19 +1,72 @@
-# Define the UI for the module
+##******************************************************************************
+##*
+##* This is the question_selection shiny module which allows users to select questions
+##* from a predefined set, customize the selection, and save the selected set.
+##*
+##******************************************************************************
+
+#' Question Selection UI
+#'
+#' A shiny module that provides an interface for users to select questions from a predefined set,
+#' customize the selection, and save the selected set. The module includes options to filter questions
+#' by language, select specific columns to display, and group questions into sets.
+#'
+#' @param id The namespace id of the module.
+#'
+#' @return An HTML element for use in a UI.
+#'
+#' @seealso [mod_question_selection_server()]
+#'
+#' @export
+#'
+#' @examples
+#' if(interactive()){
+#'  library(shiny)
+#'  library(rhandsontable)
+#'  library(shinyWidgets)
+#'
+#'  languages <- c("English", "German", "French")
+#'  questions_full <- list(
+#'    binary = data.frame(Number = 1:10, Answer = sample(c("Yes", "No"), 10, replace = TRUE)),
+#'    range = data.frame(Number = 1:10, Answer = sample(1:100, 10))
+#'  )
+#'  question_sets <- reactiveVal(data.frame(question_set_name = character(), encrypted_question_set_code = character()))
+#'
+#'  shinyApp(
+#'    ui = fluidPage(
+#'      mod_question_selection_ui(id = "mod_question_selection")
+#'    ),
+#'    server = function(input, output, session) {
+#'      mod_question_selection_server(
+#'        id = "mod_question_selection",
+#'        questions_full = questions_full,
+#'        question_sets = question_sets
+#'      )
+#'    }
+#'  )
+#' }
 mod_question_selection_ui <- function(id) {
   ns <- shiny::NS(id)
   shiny::tagList(
+    ## Language Selection -----------------------------------------------------
     shiny::fluidRow(
       shiny::column(
         width = 12,
         shiny::selectInput(ns("language"), "Select Language", choices = languages)
       )
     ),
+    ## Question Set Name and Buttons ------------------------------------------
     shiny::fluidRow(
       shiny::column(
         width = 3, 
         shiny::textInput(
           ns("question_set_name"), 
           "Select Question Set Name"
+        ),
+        shinyWidgets::checkboxGroupButtons(
+          ns("checks_for_question_set"), 
+          choiceNames = "Show Help Videos",
+          choiceValues = "show_help"
         ),
         rhandsontable::rHandsontableOutput(ns("selected_groups_table")),
         shiny::textOutput(ns("question_set_code")),
@@ -35,6 +88,7 @@ mod_question_selection_ui <- function(id) {
         )
       )
     ),
+    ## Question Tabs ----------------------------------------------------------
     shiny::fluidRow(
       shiny::column(
         width = 12, 
@@ -50,12 +104,7 @@ mod_question_selection_ui <- function(id) {
               label = "Show Columns",
               multiple = TRUE,
               selected = "Answer",
-              choices = c("Answer", "Source_link", "Comments"
-                          # ,
-                          # "worldwide_use", 
-                          # "europe_use", "germany_use", "kenya_use", "vietnam_use", "costarica_use", 
-                          # "note_please_ignore"
-              )
+              choices = c("Answer", "Source_link", "Comments")
             ),
             rhandsontable::rHandsontableOutput(ns("binary_table"))
           ), 
@@ -66,12 +115,7 @@ mod_question_selection_ui <- function(id) {
               label = "Show Columns",
               multiple = TRUE,
               selected = "Answer",
-              choices = c("Answer", "Source_link", "Comments"
-                          # ,
-                          # "worldwide_use", 
-                          # "europe_use", "germany_use", "kenya_use", "vietnam_use", "costarica_use", 
-                          # "note_please_ignore", "old_number"
-              )
+              choices = c("Answer", "Source_link", "Comments")
             ),
             rhandsontable::rHandsontableOutput(ns("range_table"))
           )
@@ -81,10 +125,26 @@ mod_question_selection_ui <- function(id) {
   )
 }
 
-# Define the server logic for the module
+#' Question Selection Server
+#'
+#' A shiny module server function, which handles the logic for selecting questions.
+#'
+#' @param id The namespace id of the module.
+#' @param questions_full Full set of questions
+#' @param question_sets Reactive value to store question sets
+#'
+#' @return Server logic for the question selection module
+#'
+#' @seealso [mod_question_selection_ui()]
+#'
+#' @export
+#'
+#' @inherit mod_question_selection_ui title description details examples
 mod_question_selection_server <- function(id, questions_full, question_sets) {
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
+    
+    ## Reactive Values --------------------------------------------------------
     
     # Reactive values to store the table data
     binary_data <- shiny::reactiveVal(
@@ -99,11 +159,10 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
         dplyr::mutate(Group = NA_integer_)
     )
     
+    ## Reset Question Selection ----------------------------------------------
     observeEvent(input$reset_question_selection, {
       selected_language <- input$language
-      
       binary_columns <- input$binary_columns
-      
       range_columns <- input$range_columns
       
       binary_data(
@@ -119,8 +178,7 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
       )
     })
     
-    
-    # Observe changes in the language selection
+    ## Observe Language and Column Selection ---------------------------------
     shiny::observeEvent({
       input$language
       input$binary_columns
@@ -128,9 +186,7 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
     },
     {
       selected_language <- input$language
-      
       binary_columns <- input$binary_columns
-      
       range_columns <- input$range_columns
       
       binary_group <- if (!is.null(input$binary_table)) {
@@ -158,6 +214,8 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
       )
     })
     
+    ## Render Tables ---------------------------------------------------------
+    
     # Render the binary table
     output$binary_table <- rhandsontable::renderRHandsontable({
       rhandsontable::rhandsontable(binary_data(), readOnly = TRUE) |>
@@ -171,6 +229,8 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
         rhandsontable::hot_col("Group", readOnly = FALSE) |>
         hot_cols(columnSorting = TRUE)
     })
+    
+    ## Selected Questions ----------------------------------------------------
     
     # Reactive value to store the selected questions data
     selected_questions <- shiny::reactiveVal(
@@ -220,15 +280,12 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
         dplyr::filter(!is.na(Group)) |>
         dplyr::mutate(Type = "Range")
       
-      
       selected_questions(
         dplyr::bind_rows(binary_selected, range_selected) |>
           dplyr::select(Type, Group, Number) |> 
           dplyr::group_by(Type, Group)
       )
     })
-    
-    
     
     # Observe changes in the range table and update the reactive value
     shiny::observeEvent(input$range_table, {
@@ -240,7 +297,7 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
             binary_data() |>
               select(Number, Group) |> 
               dplyr::mutate(Type = "Binary")
-            ) |> 
+          ) |> 
           mutate(Group = dense_rank(Group))|>
           dplyr::filter(Type == "Range") |> 
           dplyr::select(-Type)
@@ -269,7 +326,6 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
         dplyr::filter(!is.na(Group)) |>
         dplyr::mutate(Type = "Range")
       
-      
       selected_questions(
         dplyr::bind_rows(binary_selected, range_selected) |>
           dplyr::select(Type, Group, Number) |> 
@@ -283,6 +339,8 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
       rhandsontable::rhandsontable(selected_questions(), readOnly = TRUE) |>
         hot_cols(columnSorting = TRUE)
     })
+    
+    ## Selected Groups -------------------------------------------------------
     
     # Reactive value to store the selected group data
     selected_groups <- shiny::reactiveVal(
@@ -303,6 +361,19 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
           tidyr::pivot_wider(names_from = Type, names_prefix = "N_", values_from = "N_Group") |> 
           dplyr::select(dplyr::any_of(c("Group", "N_Binary", "N_Range")))
       )
+      
+      shinyWidgets::updateCheckboxGroupButtons(
+        inputId = "checks_for_question_set", 
+        choiceNames = c(
+          "Show Help Videos",
+          selected_groups() |> pull(Group) |> sort()
+        ),
+        choiceValues = c(
+          "show_help",
+          selected_groups() |> pull(Group) |> sort()
+        ),
+        selected = input$checks_for_question_set
+      )
     })
     
     # Render the selected groups table
@@ -312,9 +383,48 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
         hot_cols(columnSorting = TRUE)
     })
     
-    # Observe event for saving question set
+    ## Save Question Set -----------------------------------------------------
     shiny::observeEvent(input$save_question_set, {
       question_set_name <- input$question_set_name
+      
+      # Check if the question set name is at least 5 characters long
+      if (nchar(question_set_name) < 5) {
+        shiny::showModal(
+          shiny::modalDialog(
+            title = "Error",
+            "Question set name must be at least 5 characters long. Please use a different name.",
+            easyClose = TRUE,
+            footer = NULL
+          )
+        )
+        req()
+      }
+      
+      # Check for empty selected_groups()
+      if (nrow(selected_groups()) == 0) {
+        shiny::showModal(
+          shiny::modalDialog(
+            title = "Error",
+            "No groups selected. Please select at least one group.",
+            easyClose = TRUE,
+            footer = NULL
+          )
+        )
+        req()
+      }
+      
+      # Check if the Group values of the selected_groups() do not exceed a maximum of 10
+      if (any(selected_groups()$Group > 10)) {
+        shiny::showModal(
+          shiny::modalDialog(
+            title = "Error",
+            "Group values must not exceed a maximum of 10. Please adjust the groups.",
+            easyClose = TRUE,
+            footer = NULL
+          )
+        )
+        req()
+      }
       
       # Check if the question set name is already used
       if (question_set_name %in% question_sets()$question_set_name) {
@@ -326,21 +436,55 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
             footer = NULL
           )
         )
-      } else {
-        # Add the new question set to the global data frame
-        question_sets(
-          rbind(
-            question_sets(),
-            data.frame(
-              question_set_name = question_set_name,
-              encrypted_question_set_code = encrypted_question_set_code(),
-              stringsAsFactors = FALSE
-            )
+        req()
+      }
+      
+      # Function to determine group value
+      determine_group_value <- function(group_number) {
+        if (group_number %in% input$checks_for_question_set) {
+          TRUE
+        } else if (group_number %in% selected_groups()$Group) {
+          FALSE
+        } else {
+          NA
+        }
+      }
+      
+      # Add the new question set to the global data frame
+      question_sets(
+        rbind(
+          question_sets(),
+          data.frame(
+            question_set_name = question_set_name,
+            encrypted_question_set_code = encrypted_question_set_code(),
+            help_videos_active = "show_help" %in% input$checks_for_question_set,
+            group_1 = determine_group_value(1),
+            group_2 = determine_group_value(2),
+            group_3 = determine_group_value(3),
+            group_4 = determine_group_value(4),
+            group_5 = determine_group_value(5),
+            group_6 = determine_group_value(6),
+            group_7 = determine_group_value(7),
+            group_8 = determine_group_value(8),
+            group_9 = determine_group_value(9),
+            group_10 = determine_group_value(10),
+            stringsAsFactors = FALSE
           )
         )
-        shiny::showNotification("Question set saved successfully.", type = "message")
-      }
+      )
+      question_sets_static <<- question_sets()
+      
+      shiny::showModal(
+        shiny::modalDialog(
+          title = "Success",
+          "Question set saved successfully.",
+          easyClose = TRUE,
+          footer = NULL
+        )
+      )
     })
+    
+    ## Encrypted Question Set Code -------------------------------------------
     
     # Reactive expression to generate the encrypted question set code
     encrypted_question_set_code <- shiny::reactive({

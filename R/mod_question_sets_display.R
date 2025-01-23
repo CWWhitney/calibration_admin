@@ -64,19 +64,33 @@ mod_question_sets_display_server <- function(id, question_sets) {
       # Reactive value to store the selected question set code
       selected_question_set_code <- shiny::reactiveVal()
       
+      
+      ## Render Tables --------------------------------------------------------
+      
+      # Create a proxy for the DataTable
+      proxy <- DT::dataTableProxy("question_sets_table")
+      
       # Render the question sets table
       output$question_sets_table <- DT::renderDataTable({
         DT::datatable(
-          question_sets()
+          question_sets(),
+          selection = "none"
         )
       })
       
+      ## Observe Events -------------------------------------------------------
+      
       # Observe button clicks in the question sets table
       shiny::observeEvent(input$question_sets_table_cell_clicked, {
-
         info <- input$question_sets_table_cell_clicked
-        if (!is.null(info$value) && info$col == 2) { # Assuming the button is in the third column
+        if (!is.null(info$value) && info$col == 2) { 
           selected_question_set_code(info$value)
+        }
+        if (!is.null(info$value) && info$col > 2) { 
+          question_sets_cur <- question_sets()
+          question_sets_cur[info$row, info$col] <- !info$value
+          question_sets(question_sets_cur)
+          
         }
       })
       

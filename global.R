@@ -37,6 +37,24 @@ languages <- c(
   "Engkis"
 )
 
+
+question_sets_static <- data.frame(
+  question_set_name = character(0),
+  encrypted_question_set_code = character(0),
+  help_videos_active = logical(0),
+  group_1 = logical(0),
+  group_2 = logical(0),
+  group_3 = logical(0),
+  group_4 = logical(0),
+  group_5 = logical(0),
+  group_6 = logical(0),
+  group_7 = logical(0),
+  group_8 = logical(0),
+  group_9 = logical(0),
+  group_10 = logical(0)
+)
+
+
 # Generate a 32-byte key for encryption
 # sodium::random(32)
 our_key <- as.raw(c(0x3f, 0x79, 0x6b, 0x5c, 0xe0, 0x40, 0x8e, 0x0b, 0x64, 
