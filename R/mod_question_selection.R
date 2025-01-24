@@ -386,6 +386,7 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
     ## Save Question Set -----------------------------------------------------
     shiny::observeEvent(input$save_question_set, {
       question_set_name <- input$question_set_name
+
       
       # Check if the question set name is at least 5 characters long
       if (nchar(question_set_name) < 5) {
@@ -397,7 +398,7 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
             footer = NULL
           )
         )
-        req()
+        req(FALSE)
       }
       
       # Check for empty selected_groups()
@@ -410,7 +411,7 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
             footer = NULL
           )
         )
-        req()
+        req(FALSE)
       }
       
       # Check if the Group values of the selected_groups() do not exceed a maximum of 10
@@ -423,7 +424,7 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
             footer = NULL
           )
         )
-        req()
+        req(FALSE)
       }
       
       # Check if the question set name is already used
@@ -436,7 +437,7 @@ mod_question_selection_server <- function(id, questions_full, question_sets) {
             footer = NULL
           )
         )
-        req()
+        req(FALSE)
       }
       
       # Function to determine group value
