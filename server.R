@@ -21,11 +21,13 @@ server <- function(input, output, session) {
   #### Binary Display ----------------------------------------------------------
   mod_responses_display_server(
     "binary_responses_display",
-    loading_function = load_binary_responses
+    loading_function = load_binary_responses,
+    binary_or_range = "binary"
   )
   #### Range Display ----------------------------------------------------------
   mod_responses_display_server(
     "range_responses_display",
-    loading_function = load_range_responses
+    loading_function = load_range_responses,
+    binary_or_range = "range"
   )
 }
