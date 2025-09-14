@@ -1,36 +1,171 @@
+## Load Packages -------------------------------------------------------------
+library(shiny)
+library(DT)
+library(rhandsontable) # excel like interactive tables
+library(reactable)   # interactive tables
+library(echarts4r)   # interactive charts
 
-# Load global packages
-library(pins)
-library(purrr)
-library(fs)
+library(DBI)
+library(pool)
+library(RSQLite)
 
-# Connect to the {pins} board containing the workshop user data
-board <- pins::board_connect(auth = "envvar")
+library(purrr)   # working with lists
+library(dplyr)   # general data prep
+library(stringr)   # working with strings
 
-# Load custom functions
-fs::dir_ls("R") |> 
-  purrr::map(~ source(.x)) |> 
-  purrr::quietly()
+# SETUP ----------------------------------------------------------------------
+# "srv/shiny-app-data/database/calibration.db"
+#srv/shiny-app-data/database/question_sets.db
 
 
-# Define Google API authentication type
-# If the Google Sheet is public, simply call `googlesheets4::gs4_death()` here
-# to indicate that no authentication is necessary
-googlesheets4::gs4_deauth()
+# Get the database path from environment variable or use default
+db_path <- Sys.getenv("db_con_path", unset = "question_sets.db")
 
-# Define the URL of the Google Sheet
-google_sheets_url <- "https://docs.google.com/spreadsheets/d/1yTboPXmDMF43YmjsuEH7bbPwcEj4fPfBD68rNWrOPSI/edit?usp=sharing"
-
-questions_full <- get_full_data(
-  gs_url = google_sheets_url
+# Connect to the SQLite database
+pool <- dbPool(
+  drv = RSQLite::SQLite(),
+  dbname = db_path
 )
 
+# # Drop the table if it exists
+# DBI::dbExecute(pool, "DROP TABLE IF EXISTS range_responses;")
+# DBI::dbExecute(pool, "DROP TABLE IF EXISTS binary_responses;")
+# DBI::dbExecute(pool, "DROP TABLE IF EXISTS users_table;")
+# DBI::dbExecute(pool, "DROP TABLE IF EXISTS question_sets;")
+
+# Create the user_responses table
+DBI::dbExecute(pool, "
+  CREATE TABLE IF NOT EXISTS users_table (
+    user_first_name TEXT,
+    user_last_name TEXT,
+    user_session TEXT UNIQUE,
+    workshop_set TEXT,
+    round_number INTEGER,
+    question_number INTEGER,
+    question_type TEXT,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+")
+
+
+# Create the user_responses table
+DBI::dbExecute(pool, "
+  CREATE TABLE IF NOT EXISTS binary_responses (
+    user_first_name TEXT,
+    user_last_name TEXT,
+    user_session TEXT,
+    workshop_set TEXT,
+    round_number INTEGER,
+    question_number INTEGER,
+    question_text TEXT,
+    index_in_set INTEGER,
+    response BOOLEAN,
+    confidence TEXT,
+    truth BOOLEAN,
+    brier_score REAL,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+")
+
+# Create the user_estimates table
+DBI::dbExecute(pool, "
+  CREATE TABLE IF NOT EXISTS range_responses (
+    user_first_name TEXT,
+    user_last_name TEXT,
+    user_session TEXT,
+    workshop_set TEXT,
+    round_number INTEGER,
+    question_number INTEGER,
+    question_text TEXT,
+    index_in_set INTEGER,
+    lower_90 REAL,
+    upper_90 REAL,
+    truth REAL,
+    relative_error REAL,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+")
+
+# Create the question_sets table
+DBI::dbExecute(pool, "
+  CREATE TABLE IF NOT EXISTS question_sets (
+    question_set_name TEXT UNIQUE,
+    encrypted_question_set_code TEXT,
+    help_videos_active BOOLEAN,
+    round_1 BOOLEAN,
+    round_2 BOOLEAN,
+    round_3 BOOLEAN,
+    round_4 BOOLEAN,
+    round_5 BOOLEAN,
+    round_6 BOOLEAN,
+    round_7 BOOLEAN,
+    round_8 BOOLEAN,
+    round_9 BOOLEAN,
+    round_10 BOOLEAN,
+    created TIMESTAMP,
+    created_by TEXT
+  );
+")
+
+load_question_sets <- function() {
+  DBI::dbReadTable(pool, "question_sets")
+}
+
+load_users_table <- function() {
+  DBI::dbReadTable(pool, "users_table")
+}
+
+delete_users_entry <- function(user_first_name, user_last_name, user_session) {
+  DBI::dbExecute(
+    pool,
+    "DELETE FROM users_table WHERE user_first_name = ? AND user_last_name = ? AND user_session = ?", 
+    params = list(user_first_name, user_last_name, user_session)
+    )
+  DBI::dbExecute(
+    pool,
+    "DELETE FROM binary_responses WHERE user_first_name = ? AND user_last_name = ? AND user_session = ?", 
+    params = list(user_first_name, user_last_name, user_session)
+  )
+  DBI::dbExecute(
+    pool,
+    "DELETE FROM range_responses WHERE user_first_name = ? AND user_last_name = ? AND user_session = ?", 
+    params = list(user_first_name, user_last_name, user_session)
+  )
+}
+
+load_binary_responses <- function() {
+  DBI::dbReadTable(pool, "binary_responses")
+}
+
+load_range_responses <- function() {
+  DBI::dbReadTable(pool, "range_responses")
+}
+
+# Ensure the pool is closed when the app stops
+onStop(function() {
+  poolClose(pool)
+})
+
+# Sourcing uitls explicitly, since the R/ folder gets sourced after global.R
+source("R/utils.R", encoding = "UTF-8")
+
+googlesheets4::gs4_deauth()
+
+questions_full <- get_full_data(
+  gs_url = Sys.getenv("google_sheets_url")
+) |> purrr::map(
+  \(x) x |>
+    dplyr::mutate(Number = as.integer(Number)) |>
+    dplyr::mutate(Answer = as.character(Answer))
+)
+
+
 # Define the language questions will be asked in
-language <- "German"
+language <- "English"
 
 languages <- c(
-  "German",
   "English",
+  "German",
   "Kiswahili",
   "Spanish",
   "Vietnamese",
@@ -38,21 +173,9 @@ languages <- c(
 )
 
 
-question_sets_static <- data.frame(
-  question_set_name = character(0),
-  encrypted_question_set_code = character(0),
-  help_videos_active = logical(0),
-  group_1 = logical(0),
-  group_2 = logical(0),
-  group_3 = logical(0),
-  group_4 = logical(0),
-  group_5 = logical(0),
-  group_6 = logical(0),
-  group_7 = logical(0),
-  group_8 = logical(0),
-  group_9 = logical(0),
-  group_10 = logical(0)
-)
+## Define Google API authentication type
+## If the Google Sheet is public, simply call `googlesheets4::gs4_death()` here
+## to indicate that no authentication is necessary
 
 
 # Generate a 32-byte key for encryption
@@ -68,3 +191,28 @@ our_nonce <- as.raw(c(0x9a, 0xb0, 0x99, 0x9a, 0xbe, 0x10, 0x59, 0x0d, 0x06,
                       0x6f, 0x29, 0x0a, 0xb8, 0xf7, 0xc3, 0xdb, 0xa8, 0x58, 0x90, 0x4c, 
                       0x0a, 0xc9, 0xae, 0xc2)) 
 
+
+# Build UI Theme ---------------------------------------------------------------
+## Develop the Bootstrap theme for the app
+
+app_theme <- bslib::bs_theme(
+  version = 5, 
+  bootswatch = "sketchy", 
+  dark = "#153015",
+  bg = "#153015", 
+  fg = "#FFFFFF", 
+  primary = "#004F9E",   # Bonn blue
+  secondary = "#FBBA00",   # Bonn yellow
+  warning = "#FBBA00", # Bonn yellow
+  danger = "#FE6100",
+  "body-bg" = "#153015",
+  "navbar-bg" = "#153015",
+  "navbar-light-color" = "white",
+  "navbar-light-hover-color" = "white",
+  "nav-tabs-link-active-color" = "white",
+  "nav-link-color" = "white",
+  "nav-link-hover-color" = "#FBBA00"
+) |> bslib::bs_add_variables(
+  # "modal-backdrop-opacity" = 1,
+  # "modal-backdrop-bg" = "grey"
+) 

@@ -34,13 +34,27 @@
 #'    )
 #'  
 #'  }
-mod_question_sets_display_ui <- function(id) {
-  ns <- NS(id)
-  tagList(
-    DT::dataTableOutput(ns("question_sets_table")),
-    rhandsontable::rHandsontableOutput(ns("decoded_questions_table"))
+mod_question_sets_display_ui <- function(id, tab_title) {
+  ns <- shiny::NS(id)
+  bslib::nav_panel(
+    title = tab_title,
+    bslib::navset_card_tab(
+      title = bslib::card_title(
+        "Question Set Display", 
+        actionButton(
+          ns("reload"), label = bsicons::bs_icon("arrow-clockwise"),
+          class = "btn-warning"
+        )
+      ),
+      bslib::card_body(
+        DT::dataTableOutput(ns("question_sets_table"))
+      )
+    )
   )
 }
+
+
+
 
 #' Question Sets Display Server
 #'
@@ -55,54 +69,124 @@ mod_question_sets_display_ui <- function(id) {
 #' @export
 #'
 #' @inherit mod_question_sets_display_ui title description details examples
-mod_question_sets_display_server <- function(id, question_sets) {
-  moduleServer(
-    id,
-    function(input, output, session) {
-      ns <- session$ns
+mod_question_sets_display_server <- function(id, trigger_refresh) {
+  moduleServer(id, function(input, output, session) {
+    ns <- session$ns
+    
+    selected_question_set_code <- shiny::reactiveVal()
+    selected_row_to_delete <- shiny::reactiveVal()
+    question_sets <- reactiveVal(load_question_sets())
+    
+    # Refresh button
+    observe({
+      input$reload
+      trigger_refresh()
+      invalidateLater(60000, session)
       
-      # Reactive value to store the selected question set code
-      selected_question_set_code <- shiny::reactiveVal()
+      question_sets(load_question_sets())
+    })
+    
+    # Create a proxy for the DataTable
+    proxy <- DT::dataTableProxy("question_sets_table")
+    
+    output$question_sets_table <- DT::renderDataTable({
+      data <- question_sets()
+      round_cols <- grep("^round_", names(data), value = TRUE) |> 
+        c("help_videos_active")
       
-      
-      ## Render Tables --------------------------------------------------------
-      
-      # Create a proxy for the DataTable
-      proxy <- DT::dataTableProxy("question_sets_table")
-      
-      # Render the question sets table
-      output$question_sets_table <- DT::renderDataTable({
-        DT::datatable(
-          question_sets(),
-          selection = "none"
+      # Convert round columns to HTML buttons
+      for (col in round_cols) {
+        data[[col]] <- ifelse(
+          data[[col]],
+          sprintf('<div style="text-align:center;"><button class="btn btn-default action-button btn-secondary" data-col="%s" data-value="1">✔</button></div>', col),
+          sprintf('<div style="text-align:center;"><button class="btn btn-default action-button btn-outline-secondary" data-col="%s" data-value="0">✖</button></div>', col)
         )
-      })
+      }
       
-      ## Observe Events -------------------------------------------------------
+      # Wrap encrypted code column
+      data$encrypted_question_set_code <- 
+        glue::glue(
+          '<div style="max-width:200px; white-space:normal; word-wrap:break-word;" data-value="{code}">{code}</div>',
+          code = data$encrypted_question_set_code
+        )
       
-      # Observe button clicks in the question sets table
-      shiny::observeEvent(input$question_sets_table_cell_clicked, {
-        info <- input$question_sets_table_cell_clicked
-        if (!is.null(info$value) && info$col == 2) { 
-          selected_question_set_code(info$value)
-        }
-        if (!is.null(info$value) && info$col > 2) { 
-          question_sets_cur <- question_sets()
-          question_sets_cur[info$row, info$col] <- !info$value
-          question_sets(question_sets_cur)
-          
-        }
-      })
       
-      # Render the decoded question set table
-      output$decoded_questions_table <- rhandsontable::renderRHandsontable({
-        req(selected_question_set_code())
-        key <- our_key
-        nonce <- our_nonce
-        decoded_data <- decrypt_question_index(selected_question_set_code(), key, nonce)
-        rhandsontable::rhandsontable(decoded_data, readOnly = TRUE) |>
-          hot_cols(columnSorting = TRUE)
-      })
-    }
-  )
+      data$delete_button <- sprintf(
+        '<button class="btn btn-danger delete-btn" data-row="%s">Delete</button>',
+        seq_len(nrow(data))
+      )
+      
+      
+      DT::datatable(
+        data,
+        escape = FALSE,
+        selection = "none",
+        options = list(dom = 't')
+      )
+    })
+    
+    
+    
+    
+    # Observe cell clicks
+    observeEvent(input$question_sets_table_cell_clicked, {
+      info <- input$question_sets_table_cell_clicked
+      data <- question_sets()
+      
+      if (!is.null(info$value) && grepl("delete-btn", info$value)) {
+        showModal(
+          modalDialog(
+            title = "Confirm Deletion",
+            "Are you sure you want to delete this question set?",
+            footer = tagList(
+              actionButton(ns("confirm_delete"), "Delete", class = "btn-danger"),
+              modalButton("Cancel")
+            )
+          )
+        )
+        
+        # Store the row index to delete
+        selected_row_to_delete(info$row)
+        req(FALSE)
+      }
+      
+      
+      # Handle button toggle
+      col_name <- names(data)[info$col]
+      
+      if (!is.null(info$value) && stringr::str_detect(col_name, "(^round_[0-9]+$)|(^help_videos_active$)")) {
+        # Extract current value from the HTML
+        current_value <- if (grepl('data-value="1"', info$value)) TRUE else FALSE
+        new_value <- !current_value
+        
+        data[info$row, col_name] <- new_value
+        question_sets(data)
+        
+        # Update DB
+        DBI::dbExecute(pool, sprintf(
+          "UPDATE question_sets SET %s = ? WHERE question_set_name = ?",
+          col_name
+        ), params = list(as.integer(new_value), data$question_set_name[info$row]))
+        
+        # Reload to reflect changes
+        question_sets(load_question_sets())
+      }
+    })
+    
+    observeEvent(input$confirm_delete, {
+      removeModal()
+      
+      data <- question_sets()
+      row <- selected_row_to_delete()
+      question_set_name <- data$question_set_name[row]
+      
+      DBI::dbExecute(pool, "DELETE FROM question_sets WHERE question_set_name = ?", 
+                     params = list(question_set_name))
+      
+      question_sets(load_question_sets())
+    })
+    
+    
+    
+  })
 }
