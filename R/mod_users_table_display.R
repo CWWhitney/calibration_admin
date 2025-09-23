@@ -60,8 +60,9 @@ mod_users_table_server <- function(id, loading_function, deleting_function) {
       DT::datatable(
         data,
         escape = FALSE,
+        filter = "top",
         selection = "none",
-        options = list(dom = 't')
+        options = list(dom = 'frtip')
       )
     })
     
