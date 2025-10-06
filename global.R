@@ -28,10 +28,10 @@ pool <- dbPool(
 )
 
 # # Drop the table if it exists
-DBI::dbExecute(pool, "DROP TABLE IF EXISTS range_responses;")
-DBI::dbExecute(pool, "DROP TABLE IF EXISTS binary_responses;")
-DBI::dbExecute(pool, "DROP TABLE IF EXISTS users_table;")
-DBI::dbExecute(pool, "DROP TABLE IF EXISTS question_sets;")
+# DBI::dbExecute(pool, "DROP TABLE IF EXISTS range_responses;")
+# DBI::dbExecute(pool, "DROP TABLE IF EXISTS binary_responses;")
+# DBI::dbExecute(pool, "DROP TABLE IF EXISTS users_table;")
+# DBI::dbExecute(pool, "DROP TABLE IF EXISTS question_sets;")
 
 # Create the user_responses table
 DBI::dbExecute(pool, "

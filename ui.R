@@ -19,8 +19,7 @@ ui <- function() {
         bslib::card_body(
           p(stringi::stri_rand_lipsum(1)),
           p(stringi::stri_rand_lipsum(1)),
-          p(stringi::stri_rand_lipsum(1)),
-          verbatimTextOutput("user_info")
+          p(stringi::stri_rand_lipsum(1))
         )
       )
     ),

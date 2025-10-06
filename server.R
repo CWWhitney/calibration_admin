@@ -30,12 +30,4 @@ server <- function(input, output, session) {
     loading_function = load_range_responses,
     binary_or_range = "range"
   )
-  
-  
-  output$user_info <- renderPrint({
-    list(
-      username = session$user,
-      groups = session$groups
-    )
-  })
 }
