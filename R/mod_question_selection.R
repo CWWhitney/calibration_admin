@@ -58,7 +58,11 @@ mod_question_selection_ui <- function(id, tab_title) {
           choiceNames = "",
           choiceValues = "",
           direction = "vertical",
-          status = "warning"
+          status = "warning",
+          checkIcon = list(
+            yes = "✔",
+            no = "✖"
+          )
         ),
         shiny::actionButton(
           inputId = ns("save_question_set"),
@@ -433,7 +437,11 @@ mod_question_selection_server <- function(id, questions_full) {
         choiceNames = c(selected_rounds() |> pull(Round) |> sort()),
         choiceValues = c(selected_rounds() |> pull(Round) |> sort()),
         selected = selected_round_active(),
-        status = "warning"
+        status = "warning",
+         checkIcon = list(
+            yes = "✔",
+            no = "✖"
+          )
       )
     })
     
@@ -445,7 +453,11 @@ mod_question_selection_server <- function(id, questions_full) {
         choiceNames = selected_round_choices(),
         choiceValues = selected_round_choices(),
         selected = selected_round_active(),
-        status = "warning"
+        status = "warning",
+        checkIcon = list(
+          yes = "✔",
+          no = "✖"
+        )
       )
     })
     
@@ -540,16 +552,18 @@ mod_question_selection_server <- function(id, questions_full) {
   INSERT INTO question_sets (
     question_set_name,
     encrypted_question_set_code,
+    question_set_active,
     help_videos_active,
     round_1, round_2, round_3, round_4, round_5,
     round_6, round_7, round_8, round_9, round_10,
     created, created_by
   ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
   )
 ", params = list(
   question_set_name,
   encrypted_question_set_code(),
+  TRUE,
   "show_help" %in% input$help_videos_active,
   determine_round_value(1),
   determine_round_value(2),
@@ -561,7 +575,6 @@ mod_question_selection_server <- function(id, questions_full) {
   determine_round_value(8),
   determine_round_value(9),
   determine_round_value(10),
-  Sys.time(),
   get_posit_user()
 ))
       
@@ -597,13 +610,15 @@ mod_question_selection_server <- function(id, questions_full) {
       DBI::dbExecute(pool, "
     UPDATE question_sets SET
       encrypted_question_set_code = ?,
+      question_set_active = ?,
       help_videos_active = ?,
       round_1 = ?, round_2 = ?, round_3 = ?, round_4 = ?, round_5 = ?,
       round_6 = ?, round_7 = ?, round_8 = ?, round_9 = ?, round_10 = ?,
-      created = ?, created_by = ?
+      created = CURRENT_TIMESTAMP, created_by = ?
     WHERE question_set_name = ?
   ", params = list(
     encrypted_question_set_code(),
+    TRUE,
     "show_help" %in% input$help_videos_active,
     determine_round_value(1),
     determine_round_value(2),
@@ -615,7 +630,6 @@ mod_question_selection_server <- function(id, questions_full) {
     determine_round_value(8),
     determine_round_value(9),
     determine_round_value(10),
-    Sys.time(),
     get_posit_user(),
     question_set_name
   ))
@@ -633,7 +647,7 @@ mod_question_selection_server <- function(id, questions_full) {
       trigger_refresh(trigger_refresh() + 1)
     })
     
-   
+    
     ## Render Tables ---------------------------------------------------------
     
     # Render the binary table

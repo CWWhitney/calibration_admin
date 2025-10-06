@@ -52,10 +52,12 @@ mod_users_table_server <- function(id, loading_function, deleting_function) {
       data <- users_data()
       
       # Add delete button column
-      data$delete_button <- sprintf(
-        '<button class="btn btn-danger delete-btn" data-row="%s">Delete</button>',
-        seq_len(nrow(data))
-      )
+      if(isTRUE(session$groups == "Admins")) {
+        data$delete_button <- sprintf(
+          '<button class="btn btn-danger delete-btn" data-row="%s">Delete</button>',
+          seq_len(nrow(data))
+        )
+      }
       
       DT::datatable(
         data,

@@ -92,7 +92,7 @@ mod_question_sets_display_server <- function(id, trigger_refresh) {
     output$question_sets_table <- DT::renderDataTable({
       data <- question_sets()
       round_cols <- grep("^round_", names(data), value = TRUE) |> 
-        c("help_videos_active")
+        c("question_set_active","help_videos_active")
       
       # Convert round columns to HTML buttons
       for (col in round_cols) {
@@ -110,11 +110,12 @@ mod_question_sets_display_server <- function(id, trigger_refresh) {
           code = data$encrypted_question_set_code
         )
       
-      
-      data$delete_button <- sprintf(
-        '<button class="btn btn-danger delete-btn" data-row="%s">Delete</button>',
-        seq_len(nrow(data))
-      )
+      if(isTRUE(session$groups == "Admins")) {
+        data$delete_button <- sprintf(
+          '<button class="btn btn-danger delete-btn" data-row="%s">Delete</button>',
+          seq_len(nrow(data))
+        )
+      }
       
       
       DT::datatable(
@@ -154,7 +155,7 @@ mod_question_sets_display_server <- function(id, trigger_refresh) {
       # Handle button toggle
       col_name <- names(data)[info$col]
       
-      if (!is.null(info$value) && stringr::str_detect(col_name, "(^round_[0-9]+$)|(^help_videos_active$)")) {
+      if (!is.null(info$value) && stringr::str_detect(col_name, "(^round_[0-9]+$)|(^question_set_active$)|(^help_videos_active$)")) {
         # Extract current value from the HTML
         current_value <- if (grepl('data-value="1"', info$value)) TRUE else FALSE
         new_value <- !current_value

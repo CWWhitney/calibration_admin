@@ -28,10 +28,10 @@ pool <- dbPool(
 )
 
 # # Drop the table if it exists
-# DBI::dbExecute(pool, "DROP TABLE IF EXISTS range_responses;")
-# DBI::dbExecute(pool, "DROP TABLE IF EXISTS binary_responses;")
-# DBI::dbExecute(pool, "DROP TABLE IF EXISTS users_table;")
-# DBI::dbExecute(pool, "DROP TABLE IF EXISTS question_sets;")
+DBI::dbExecute(pool, "DROP TABLE IF EXISTS range_responses;")
+DBI::dbExecute(pool, "DROP TABLE IF EXISTS binary_responses;")
+DBI::dbExecute(pool, "DROP TABLE IF EXISTS users_table;")
+DBI::dbExecute(pool, "DROP TABLE IF EXISTS question_sets;")
 
 # Create the user_responses table
 DBI::dbExecute(pool, "
@@ -91,6 +91,7 @@ DBI::dbExecute(pool, "
   CREATE TABLE IF NOT EXISTS question_sets (
     question_set_name TEXT UNIQUE,
     encrypted_question_set_code TEXT,
+    question_set_active BOOLEAN,
     help_videos_active BOOLEAN,
     round_1 BOOLEAN,
     round_2 BOOLEAN,
@@ -102,7 +103,7 @@ DBI::dbExecute(pool, "
     round_8 BOOLEAN,
     round_9 BOOLEAN,
     round_10 BOOLEAN,
-    created TIMESTAMP,
+    created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by TEXT
   );
 ")

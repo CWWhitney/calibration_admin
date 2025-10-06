@@ -77,14 +77,25 @@ mod_responses_display_server <- function(id, loading_function, binary_or_range) 
       DT::datatable(
         responses(),
         filter = "top",
+        extensions = "Buttons",
         options = list(
           pageLength = 10,
           autoWidth = TRUE,
-          dom = 'frtip'
+          dom = 'Bfrtip',
+          buttons = list(
+            list(
+              extend = "csv",
+              exportOptions = list(
+                modifier = list(
+                  search = "applied"
+                )
+              )
+            )
+          )
         ),
         rownames = FALSE
       )
-    })
+    }, server = FALSE)
     
     output$chart <- echarts4r::renderEcharts4r({
       
