@@ -1,4 +1,7 @@
 .Rproj.user
 .Rhistory
+.Renviron
 .RData
 .Ruserdata
+question_sets.db
+
